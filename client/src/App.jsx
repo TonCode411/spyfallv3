@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import socket from './socket';
 import StartScreen from './StartScreen';
 import LobbyScreen from './LobbyScreen';
 import SpielScreen from './SpielScreen';
 import VoteScreen from './VoteScreen';
 import AufloeungScreen from './AufloeungScreen';
-
-// screens: start | lobby | spiel | vote | aufloesung
 
 export default function App() {
   const [screen, setScreen] = useState('start');
@@ -19,20 +17,53 @@ export default function App() {
   const [ausgeschlosseneOrte, setAusgeschlosseneOrte] = useState([]);
   const [nachrichten, setNachrichten] = useState([]);
   const [timer, setTimer] = useState(null);
-  const [voteData, setVoteData] = useState(null); // full vote state for VoteScreen
+  const [voteData, setVoteData] = useState(null);
   const [voteErgebnis, setVoteErgebnis] = useState(null);
   const [roundSettings, setRoundSettings] = useState(null);
+  const [verbunden, setVerbunden] = useState(true);
+
+  // Refs so event handlers always have current values
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  const keepaliveRef = useRef(null);
 
   function pushNachricht(text) {
     setNachrichten(prev => [...prev.slice(-3), text]);
     setTimeout(() => setNachrichten(prev => prev.slice(1)), 5000);
   }
 
+  function startKeepalive() {
+    if (keepaliveRef.current) clearInterval(keepaliveRef.current);
+    keepaliveRef.current = setInterval(() => {
+      if (socket.connected) socket.emit('ping:keepalive');
+    }, 20000);
+  }
+
   useEffect(() => {
     socket.connect();
+    startKeepalive();
+
+    socket.on('connect', () => {
+      setVerbunden(true);
+      // Re-sync state after reconnect
+      const code = sessionStorage.getItem('lobbyCode');
+      const name = sessionStorage.getItem('spielerName');
+      const sid = sessionStorage.getItem('spielerId');
+      if (code && name && sid && screenRef.current !== 'start') {
+        socket.emit('state:sync', {});
+      }
+    });
+
+    socket.on('disconnect', () => {
+      setVerbunden(false);
+    });
 
     socket.on('lobby:update', (data) => {
       setLobby(data);
+      // If lobby goes back to wartend and we're in aufloesung, go to lobby
+      if (data.status === 'wartend' && screenRef.current === 'aufloesung') {
+        setScreen('lobby');
+      }
     });
 
     socket.on('runde:karte', ({ karte: k, alleOrte: orte, runde: r, settings }) => {
@@ -55,6 +86,7 @@ export default function App() {
     socket.on('runde:aufloesung', (data) => {
       setAufloesung(data);
       setVoteData(null);
+      setTimer(null);
       setScreen('aufloesung');
     });
 
@@ -62,23 +94,20 @@ export default function App() {
       setAusgeschlosseneOrte(liste);
     });
 
-    // Vote gestartet -> zeige VoteScreen
     socket.on('vote:gestartet', (data) => {
-      setVoteData({ ...data, stimmen: { [data.anklaeger]: true } });
-      setVoteErgebnis(null);
+      setVoteData(data);
       setScreen('vote');
     });
 
-    socket.on('vote:fortschritt', ({ abgegeben, gesamt }) => {
-      setVoteData(prev => prev ? { ...prev, abgegeben, gesamt } : prev);
+    socket.on('vote:fortschritt', ({ abgegeben, gesamt, stimmen }) => {
+      setVoteData(prev => prev ? { ...prev, abgegeben, gesamt, stimmen } : prev);
     });
 
-    // Vote beendet ohne Aufloesung -> zurueck zum Spiel
     socket.on('vote:ergebnis', (data) => {
       setVoteData(null);
       setVoteErgebnis(data);
       setScreen('spiel');
-      setTimeout(() => setVoteErgebnis(null), 5000);
+      setTimeout(() => setVoteErgebnis(null), 6000);
     });
 
     socket.on('vote:abgebrochen', () => {
@@ -90,6 +119,8 @@ export default function App() {
     socket.on('system:nachricht', ({ text }) => pushNachricht(text));
 
     return () => {
+      socket.off('connect');
+      socket.off('disconnect');
       socket.off('lobby:update');
       socket.off('runde:karte');
       socket.off('timer:tick');
@@ -100,20 +131,33 @@ export default function App() {
       socket.off('vote:ergebnis');
       socket.off('vote:abgebrochen');
       socket.off('system:nachricht');
+      if (keepaliveRef.current) clearInterval(keepaliveRef.current);
     };
   }, []);
 
   const handleErstellen = (name) => new Promise((res, rej) => {
     socket.emit('lobby:erstellen', { name }, (r) => {
-      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
-      else rej(new Error(r.error));
+      if (r.success) {
+        setSpielerID(r.spielerId);
+        sessionStorage.setItem('lobbyCode', r.code);
+        sessionStorage.setItem('spielerName', name);
+        sessionStorage.setItem('spielerId', r.spielerId);
+        setScreen('lobby');
+        res();
+      } else rej(new Error(r.error));
     });
   });
 
   const handleBeitreten = (name, code) => new Promise((res, rej) => {
     socket.emit('lobby:beitreten', { code, name }, (r) => {
-      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
-      else rej(new Error(r.error));
+      if (r.success) {
+        setSpielerID(r.spielerId);
+        sessionStorage.setItem('lobbyCode', r.code);
+        sessionStorage.setItem('spielerName', name);
+        sessionStorage.setItem('spielerId', r.spielerId);
+        setScreen('lobby');
+        res();
+      } else rej(new Error(r.error));
     });
   });
 
@@ -124,12 +168,14 @@ export default function App() {
   };
 
   const handleNaechsteRunde = () => {
-    setKarte(null); setAufloesung(null); setAusgeschlosseneOrte([]);
-    setVoteData(null); setVoteErgebnis(null); setTimer(null);
+    // Just go back to lobby - host can start next round from there
+    setKarte(null);
+    setAufloesung(null);
+    setAusgeschlosseneOrte([]);
+    setVoteData(null);
+    setVoteErgebnis(null);
+    setTimer(null);
     setScreen('lobby');
-    socket.emit('runde:starten', {}, (res) => {
-      if (res && !res.success) console.warn(res.error);
-    });
   };
 
   const handleSettingsUpdate = (s) => socket.emit('settings:update', s);
@@ -143,6 +189,16 @@ export default function App() {
 
   return (
     <>
+      {!verbunden && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: 'var(--red)', color: 'white',
+          padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600
+        }}>
+          ⚠️ Verbindung unterbrochen – wird wiederhergestellt...
+        </div>
+      )}
+
       {screen === 'start' && (
         <StartScreen onErstellen={handleErstellen} onBeitreten={handleBeitreten} />
       )}
@@ -153,7 +209,7 @@ export default function App() {
           onSettingsUpdate={handleSettingsUpdate}
         />
       )}
-      {screen === 'spiel' && karte && (
+      {screen === 'spiel' && (
         <SpielScreen
           karte={karte} alleOrte={alleOrte} runde={runde}
           lobby={lobby} spielerId={spielerId}
