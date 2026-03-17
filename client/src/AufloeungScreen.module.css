@@ -1,17 +1,17 @@
 .wrapper {
   min-height: 100vh;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
   padding: 24px 20px;
+  background: radial-gradient(ellipse at top, rgba(201,168,76,0.05) 0%, transparent 60%);
 }
 
 .container {
   width: 100%;
-  max-width: 580px;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .header {
@@ -20,83 +20,46 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  padding: 8px 0;
 }
 
-.grundEmoji { font-size: 48px; margin-bottom: 4px; }
-
-.grundTitle {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 900;
-}
-
-.titelGruen { color: var(--green); }
-.titelRot { color: var(--red); }
-
-.sub { font-size: 14px; color: var(--text2); }
+.emoji { font-size: 50px; margin-bottom: 4px; }
+.title { font-family: var(--font-display); font-size: 32px; font-weight: 900; }
+.gruen { color: var(--green); }
+.rot { color: var(--red); }
+.sub { font-size: 13px; color: var(--text2); }
 
 .ortBox {
   background: var(--accent-dim);
   border: 1px solid rgba(201,168,76,0.3);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 14px 20px;
   text-align: center;
 }
-
-.ortLabel {
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(201,168,76,0.7);
-  margin-bottom: 6px;
-}
-
-.ortName {
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--accent);
-}
+.ortLabel { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin-bottom: 4px; }
+.ortName { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--accent); }
 
 .agentBox {
   background: var(--red-dim);
   border: 1px solid rgba(224,85,85,0.3);
   border-radius: var(--radius);
-  padding: 14px 20px;
+  padding: 12px 20px;
   text-align: center;
 }
+.agentLabel { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(224,85,85,0.6); margin-bottom: 4px; }
+.agentName { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--red); }
 
-.agentLabel {
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(224,85,85,0.7);
-  margin-bottom: 4px;
-}
-
-.agentName {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--red);
-}
-
-/* Punkte */
 .punkteBox {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.punkteGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.punkteListe { display: flex; flex-direction: column; gap: 6px; }
 
 .punkteItem {
   display: flex;
@@ -108,36 +71,30 @@
   border-radius: var(--radius-sm);
   font-size: 14px;
 }
-
-.punkteIch {
-  border-color: rgba(201,168,76,0.3);
-  background: var(--accent-dim);
-}
-
-.platz { color: var(--text3); font-size: 12px; min-width: 20px; }
+.punkteIch { border-color: rgba(201,168,76,0.3); background: var(--accent-dim); }
+.platz { color: var(--text3); font-size: 12px; min-width: 18px; }
 .punkteName { flex: 1; font-weight: 500; }
 .punkteZahl { font-weight: 700; color: var(--accent); }
 
-/* Karten */
-.kartenGrid {
+.kartenListe {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .karteItem {
-  border-radius: var(--radius-sm);
-  padding: 12px 16px;
-}
-
-.karteRot { background: var(--red-dim); border: 1px solid rgba(224,85,85,0.2); }
-.karteGruen { background: var(--surface); border: 1px solid var(--border); }
-
-.karteKopf {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
 }
+.karteItemAgent { background: var(--red-dim); border: 1px solid rgba(224,85,85,0.2); }
+.karteItemSpieler { background: var(--bg2); border: 1px solid var(--border); }
 
 .karteAvatar {
   width: 32px;
@@ -160,4 +117,13 @@
   display: flex;
   justify-content: center;
   padding: 8px 0 16px;
+}
+
+.warteHost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 32px;
+  color: var(--text2);
+  font-size: 14px;
 }

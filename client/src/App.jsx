@@ -3,7 +3,10 @@ import socket from './socket';
 import StartScreen from './StartScreen';
 import LobbyScreen from './LobbyScreen';
 import SpielScreen from './SpielScreen';
+import VoteScreen from './VoteScreen';
 import AufloeungScreen from './AufloeungScreen';
+
+// screens: start | lobby | spiel | vote | aufloesung
 
 export default function App() {
   const [screen, setScreen] = useState('start');
@@ -15,13 +18,13 @@ export default function App() {
   const [aufloesung, setAufloesung] = useState(null);
   const [ausgeschlosseneOrte, setAusgeschlosseneOrte] = useState([]);
   const [nachrichten, setNachrichten] = useState([]);
-  const [timer, setTimer] = useState(null); // { restzeit, gesamt }
-  const [voteState, setVoteState] = useState(null);
+  const [timer, setTimer] = useState(null);
+  const [voteData, setVoteData] = useState(null); // full vote state for VoteScreen
   const [voteErgebnis, setVoteErgebnis] = useState(null);
   const [roundSettings, setRoundSettings] = useState(null);
 
   function pushNachricht(text) {
-    setNachrichten(prev => [...prev.slice(-4), text]);
+    setNachrichten(prev => [...prev.slice(-3), text]);
     setTimeout(() => setNachrichten(prev => prev.slice(1)), 5000);
   }
 
@@ -36,11 +39,12 @@ export default function App() {
       setKarte(k);
       setAlleOrte(orte);
       setRunde(r);
+      setRoundSettings(settings);
       setAusgeschlosseneOrte([]);
-      setVoteState(null);
+      setVoteData(null);
       setVoteErgebnis(null);
       setTimer(null);
-      setRoundSettings(settings);
+      setAufloesung(null);
       setScreen('spiel');
     });
 
@@ -50,7 +54,7 @@ export default function App() {
 
     socket.on('runde:aufloesung', (data) => {
       setAufloesung(data);
-      setVoteState(null);
+      setVoteData(null);
       setScreen('aufloesung');
     });
 
@@ -58,23 +62,28 @@ export default function App() {
       setAusgeschlosseneOrte(liste);
     });
 
+    // Vote gestartet -> zeige VoteScreen
     socket.on('vote:gestartet', (data) => {
-      setVoteState({ phase: 'abstimmung', ...data, stimmen: {}, abgegeben: 0, gesamt: 0 });
+      setVoteData({ ...data, stimmen: { [data.anklaeger]: true } });
       setVoteErgebnis(null);
+      setScreen('vote');
     });
 
     socket.on('vote:fortschritt', ({ abgegeben, gesamt }) => {
-      setVoteState(prev => prev ? { ...prev, abgegeben, gesamt } : prev);
+      setVoteData(prev => prev ? { ...prev, abgegeben, gesamt } : prev);
     });
 
+    // Vote beendet ohne Aufloesung -> zurueck zum Spiel
     socket.on('vote:ergebnis', (data) => {
+      setVoteData(null);
       setVoteErgebnis(data);
-      setVoteState(null);
-      setTimeout(() => setVoteErgebnis(null), 4000);
+      setScreen('spiel');
+      setTimeout(() => setVoteErgebnis(null), 5000);
     });
 
     socket.on('vote:abgebrochen', () => {
-      setVoteState(null);
+      setVoteData(null);
+      setScreen('spiel');
       pushNachricht('Abstimmung abgebrochen.');
     });
 
@@ -116,7 +125,7 @@ export default function App() {
 
   const handleNaechsteRunde = () => {
     setKarte(null); setAufloesung(null); setAusgeschlosseneOrte([]);
-    setVoteState(null); setVoteErgebnis(null); setTimer(null);
+    setVoteData(null); setVoteErgebnis(null); setTimer(null);
     setScreen('lobby');
     socket.emit('runde:starten', {}, (res) => {
       if (res && !res.success) console.warn(res.error);
@@ -125,13 +134,12 @@ export default function App() {
 
   const handleSettingsUpdate = (s) => socket.emit('settings:update', s);
   const handleOrtToggle = (ortId) => socket.emit('ort:markieren', { ortId });
-
-  const handleVoteStarten = ({ beschuldigter, these }) => {
-    socket.emit('vote:starten', { beschuldigter, these });
-  };
+  const handleVoteStarten = ({ beschuldigter, these }) => socket.emit('vote:starten', { beschuldigter, these });
   const handleVoteAbgeben = (ja) => socket.emit('vote:abgeben', { ja });
   const handleVoteAbbrechen = () => socket.emit('vote:abbrechen');
   const handleAgentRaten = (ortName) => socket.emit('agent:raten', { ortName });
+
+  const spielerListe = lobby?.spieler || [];
 
   return (
     <>
@@ -140,37 +148,37 @@ export default function App() {
       )}
       {screen === 'lobby' && lobby && (
         <LobbyScreen
-          lobby={lobby}
-          spielerId={spielerId}
+          lobby={lobby} spielerId={spielerId}
           onRundeStarten={handleRundeStarten}
           onSettingsUpdate={handleSettingsUpdate}
         />
       )}
       {screen === 'spiel' && karte && (
         <SpielScreen
-          karte={karte}
-          alleOrte={alleOrte}
-          runde={runde}
-          lobby={lobby}
-          spielerId={spielerId}
+          karte={karte} alleOrte={alleOrte} runde={runde}
+          lobby={lobby} spielerId={spielerId}
           ausgeschlosseneOrte={ausgeschlosseneOrte}
           onOrtToggle={handleOrtToggle}
           onVoteStarten={handleVoteStarten}
-          onVoteAbgeben={handleVoteAbgeben}
-          onVoteAbbrechen={handleVoteAbbrechen}
           onAgentRaten={handleAgentRaten}
-          voteState={voteState}
           voteErgebnis={voteErgebnis}
           timer={timer}
           roundSettings={roundSettings}
         />
       )}
+      {screen === 'vote' && voteData && (
+        <VoteScreen
+          voteData={voteData}
+          spielerId={spielerId}
+          spielerListe={spielerListe}
+          onVoteAbgeben={handleVoteAbgeben}
+          onVoteAbbrechen={handleVoteAbbrechen}
+        />
+      )}
       {screen === 'aufloesung' && aufloesung && (
         <AufloeungScreen
-          aufloesung={aufloesung}
-          spielerId={spielerId}
-          lobby={lobby}
-          onNaechsteRunde={handleNaechsteRunde}
+          aufloesung={aufloesung} spielerId={spielerId}
+          lobby={lobby} onNaechsteRunde={handleNaechsteRunde}
         />
       )}
 
@@ -184,7 +192,7 @@ export default function App() {
               background: 'var(--surface2)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)', padding: '8px 16px',
               fontSize: 13, color: 'var(--text2)', animation: 'fadeIn 0.3s ease',
-              boxShadow: 'var(--shadow)'
+              boxShadow: 'var(--shadow)', whiteSpace: 'nowrap'
             }}>{m}</div>
           ))}
         </div>

@@ -32,7 +32,7 @@ function dealCards(lobby) {
   const n = playerList.length;
   if (n < 3) return { error: 'Mindestens 3 Spieler benoetigt' };
   const verfuegbareOrte = ORTE.filter(o => lobby.settings.aktivierteOrte.includes(o.id));
-  if (verfuegbareOrte.length === 0) return { error: 'Keine Orte aktiviert' };
+  if (!verfuegbareOrte.length) return { error: 'Keine Orte aktiviert' };
   const ort = verfuegbareOrte[Math.floor(Math.random() * verfuegbareOrte.length)];
   const rollen = shuffle(ort.rollen).slice(0, n - 1);
   const agentIndex = Math.floor(Math.random() * n);
@@ -49,7 +49,8 @@ function dealCards(lobby) {
 
 function getAgentId(lobby) {
   if (!lobby.aktuelleRunde) return null;
-  return Object.entries(lobby.aktuelleRunde.karten).find(([, k]) => k.typ === 'agent')?.[0];
+  const entry = Object.entries(lobby.aktuelleRunde.karten).find(([, k]) => k.typ === 'agent');
+  return entry ? entry[0] : null;
 }
 
 function addPunkte(lobby, id, n) {
@@ -74,8 +75,8 @@ function startTimer(lobby) {
   lobby.timerRestzeit = sek;
   lobby.timerGesamt = sek;
   lobby.timerInterval = setInterval(() => {
-    if (lobby.pausiert) return;
-    lobby.timerRestzeit--;
+    if (lobby.pausiert || lobby.status !== 'laufend') return;
+    lobby.timerRestzeit = Math.max(0, lobby.timerRestzeit - 1);
     io.to(lobby.code).emit('timer:tick', { restzeit: lobby.timerRestzeit, gesamt: lobby.timerGesamt });
     if (lobby.timerRestzeit <= 0) { stopTimer(lobby); zeitAbgelaufen(lobby); }
   }, 1000);
@@ -84,18 +85,33 @@ function startTimer(lobby) {
 function zeitAbgelaufen(lobby) {
   if (lobby.status !== 'laufend') return;
   const agentId = getAgentId(lobby);
-  // wenig Zeit (competitive) = einfacher = weniger Punkte
-  const agentPunkte = lobby.settings.timerModus === 'competitive' ? 1 : 2;
+  const competitive = lobby.settings.timerModus === 'competitive';
+  const agentPunkte = competitive ? 1 : 2;
   if (agentId && lobby.settings.punkteAktiv) addPunkte(lobby, agentId, agentPunkte);
+  lobby.status = 'aufloesung';
   io.to(lobby.code).emit('runde:aufloesung', {
     ort: { name: lobby.aktuelleRunde.ort.name, emoji: lobby.aktuelleRunde.ort.emoji },
     karten: lobby.aktuelleRunde.karten,
-    spieler: lobby.players,
-    grund: 'zeit',
-    agentPunkte,
+    spieler: Object.fromEntries(Object.entries(lobby.players).map(([id, p]) => [id, { name: p.name, punkte: p.punkte || 0 }])),
+    grund: 'zeit', agentPunkte,
     punkteUpdate: buildPunkteUpdate(lobby)
   });
+  io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
+}
+
+function aufloesung(lobby, grund, extra) {
+  stopTimer(lobby);
   lobby.status = 'aufloesung';
+  lobby.voting = null;
+  lobby.pausiert = false;
+  io.to(lobby.code).emit('runde:aufloesung', {
+    ort: { name: lobby.aktuelleRunde.ort.name, emoji: lobby.aktuelleRunde.ort.emoji },
+    karten: lobby.aktuelleRunde.karten,
+    spieler: Object.fromEntries(Object.entries(lobby.players).map(([id, p]) => [id, { name: p.name, punkte: p.punkte || 0 }])),
+    grund,
+    punkteUpdate: buildPunkteUpdate(lobby),
+    ...extra
+  });
   io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
 }
 
@@ -103,8 +119,11 @@ function getLobbyState(code) {
   const lobby = lobbies[code];
   if (!lobby) return null;
   return {
-    code: lobby.code, hostId: lobby.hostId, status: lobby.status,
-    runde: lobby.runde, pausiert: lobby.pausiert || false,
+    code: lobby.code,
+    hostId: lobby.hostId,
+    status: lobby.status,
+    runde: lobby.runde,
+    pausiert: lobby.pausiert || false,
     spieler: Object.values(lobby.players).map(p => ({
       id: p.id, name: p.name, istHost: p.id === lobby.hostId, punkte: p.punkte || 0
     })),
@@ -136,6 +155,8 @@ const DEFAULT_SETTINGS = {
 };
 
 io.on('connection', (socket) => {
+  console.log('connect', socket.id);
+
   socket.on('lobby:erstellen', ({ name }, cb) => {
     let code;
     do { code = genCode(); } while (lobbies[code]);
@@ -171,7 +192,7 @@ io.on('connection', (socket) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.hostId !== socket.id) return;
     lobby.settings = { ...lobby.settings, ...newSettings };
-    if (Array.isArray(newSettings.aktivierteOrte) && newSettings.aktivierteOrte.length === 0)
+    if (Array.isArray(newSettings.aktivierteOrte) && !newSettings.aktivierteOrte.length)
       lobby.settings.aktivierteOrte = [ORTE[0].id];
     io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
   });
@@ -179,15 +200,20 @@ io.on('connection', (socket) => {
   socket.on('runde:starten', (_, cb) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.hostId !== socket.id) return;
-    if (Object.keys(lobby.players).length < 3) return cb && cb({ success: false, error: 'Mindestens 3 Spieler benoetigt' });
+    if (Object.keys(lobby.players).length < 3) {
+      if (cb) cb({ success: false, error: 'Mindestens 3 Spieler benoetigt' });
+      return;
+    }
     const result = dealCards(lobby);
-    if (result.error) return cb && cb({ success: false, error: result.error });
+    if (result.error) { if (cb) cb({ success: false, error: result.error }); return; }
 
     lobby.status = 'laufend';
     lobby.runde++;
     lobby.aktuelleRunde = result;
     lobby.pausiert = false;
     lobby.voting = null;
+    lobby.timerRestzeit = null;
+    lobby.timerGesamt = null;
     Object.values(lobby.players).forEach(p => { p.ausgeschlosseneOrte = []; });
 
     Object.values(lobby.players).forEach(p => {
@@ -212,31 +238,40 @@ io.on('connection', (socket) => {
     if (!p) return;
     if (!p.ausgeschlosseneOrte) p.ausgeschlosseneOrte = [];
     const idx = p.ausgeschlosseneOrte.indexOf(ortId);
-    if (idx === -1) p.ausgeschlosseneOrte.push(ortId); else p.ausgeschlosseneOrte.splice(idx, 1);
+    if (idx === -1) p.ausgeschlosseneOrte.push(ortId);
+    else p.ausgeschlosseneOrte.splice(idx, 1);
     socket.emit('ort:ausgeschlossen:update', { ausgeschlosseneOrte: p.ausgeschlosseneOrte });
   });
 
-  // VOTING
+  // --- VOTING ---
   socket.on('vote:starten', ({ beschuldigter, these }) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.status !== 'laufend' || lobby.voting) return;
+    if (!lobby.players[beschuldigter]) return;
+
     lobby.pausiert = true;
     const gesamt = Object.keys(lobby.players).length;
     lobby.voting = {
       anklaeger: socket.id,
-      anklaegerName: lobby.players[socket.id]?.name,
+      anklaegerName: lobby.players[socket.id]?.name || '?',
       beschuldigter,
-      beschuldigterName: lobby.players[beschuldigter]?.name,
-      these,
+      beschuldigterName: lobby.players[beschuldigter]?.name || '?',
+      these: these || '',
       stimmen: {},
       gesamt
     };
+
+    // Anklaeger stimmt automatisch Ja
+    lobby.voting.stimmen[socket.id] = true;
+
     io.to(lobby.code).emit('vote:gestartet', {
       anklaeger: socket.id,
       anklaegerName: lobby.voting.anklaegerName,
       beschuldigter,
       beschuldigterName: lobby.voting.beschuldigterName,
-      these
+      these: lobby.voting.these,
+      abgegeben: 1,
+      gesamt
     });
     io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
   });
@@ -244,57 +279,47 @@ io.on('connection', (socket) => {
   socket.on('vote:abgeben', ({ ja }) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || !lobby.voting) return;
-    if (lobby.voting.stimmen[socket.id] !== undefined) return; // schon abgestimmt
+    if (lobby.voting.stimmen[socket.id] !== undefined) return; // already voted
     lobby.voting.stimmen[socket.id] = ja;
+
     const abgegeben = Object.keys(lobby.voting.stimmen).length;
     const { gesamt } = lobby.voting;
-
     io.to(lobby.code).emit('vote:fortschritt', { abgegeben, gesamt });
 
-    if (abgegeben >= gesamt) {
-      const jaStimmen = Object.values(lobby.voting.stimmen).filter(Boolean).length;
-      const mehrheit = jaStimmen > gesamt / 2;
-      const agentId = getAgentId(lobby);
-      const beschuldigterIstAgent = lobby.voting.beschuldigter === agentId;
+    if (abgegeben < gesamt) return; // warte auf alle
 
-      if (mehrheit) {
-        if (beschuldigterIstAgent) {
-          if (lobby.settings.punkteAktiv) {
-            Object.keys(lobby.players).forEach(pid => { if (pid !== agentId) addPunkte(lobby, pid, 1); });
-            addPunkte(lobby, lobby.voting.anklaeger, 1);
-          }
-          stopTimer(lobby);
-          lobby.status = 'aufloesung';
-          io.to(lobby.code).emit('runde:aufloesung', {
-            ort: { name: lobby.aktuelleRunde.ort.name, emoji: lobby.aktuelleRunde.ort.emoji },
-            karten: lobby.aktuelleRunde.karten,
-            spieler: lobby.players,
-            grund: 'enttarnt',
-            anklaeger: lobby.voting.anklaeger,
-            anklaegerName: lobby.voting.anklaegerName,
-            punkteUpdate: buildPunkteUpdate(lobby)
-          });
-        } else {
-          // Falsch beschuldigt - Agent +1
-          if (lobby.settings.punkteAktiv && agentId) addPunkte(lobby, agentId, 1);
-          io.to(lobby.code).emit('vote:ergebnis', {
-            mehrheit: true, beschuldigterIstAgent: false,
-            jaStimmen, gesamtStimmen: gesamt,
-            agentPunkte: lobby.settings.punkteAktiv ? 1 : 0
-          });
-          lobby.voting = null;
-          lobby.pausiert = false;
-        }
-      } else {
-        // Keine Mehrheit - Agent +1
-        if (lobby.settings.punkteAktiv && agentId) addPunkte(lobby, agentId, 1);
-        io.to(lobby.code).emit('vote:ergebnis', {
-          mehrheit: false, jaStimmen, gesamtStimmen: gesamt,
-          agentPunkte: lobby.settings.punkteAktiv ? 1 : 0
-        });
-        lobby.voting = null;
-        lobby.pausiert = false;
+    // Auswertung
+    const jaStimmen = Object.values(lobby.voting.stimmen).filter(Boolean).length;
+    const mehrheit = jaStimmen > gesamt / 2;
+    const agentId = getAgentId(lobby);
+    const beschuldigterIstAgent = lobby.voting.beschuldigter === agentId;
+
+    if (mehrheit && beschuldigterIstAgent) {
+      // Spieler gewinnen
+      if (lobby.settings.punkteAktiv) {
+        Object.keys(lobby.players).forEach(pid => { if (pid !== agentId) addPunkte(lobby, pid, 1); });
+        addPunkte(lobby, lobby.voting.anklaeger, 1); // extra fuer Anklaeger
       }
+      aufloesung(lobby, 'enttarnt', { anklaeger: lobby.voting.anklaeger, anklaegerName: lobby.voting.anklaegerName });
+    } else if (mehrheit && !beschuldigterIstAgent) {
+      // Falsch beschuldigt - Agent +1
+      if (lobby.settings.punkteAktiv && agentId) addPunkte(lobby, agentId, 1);
+      lobby.voting = null;
+      lobby.pausiert = false;
+      io.to(lobby.code).emit('vote:ergebnis', {
+        mehrheit: true, beschuldigterIstAgent: false, jaStimmen, gesamtStimmen: gesamt,
+        agentPunkte: lobby.settings.punkteAktiv ? 1 : 0
+      });
+      io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
+    } else {
+      // Keine Mehrheit - Agent +1
+      if (lobby.settings.punkteAktiv && agentId) addPunkte(lobby, agentId, 1);
+      lobby.voting = null;
+      lobby.pausiert = false;
+      io.to(lobby.code).emit('vote:ergebnis', {
+        mehrheit: false, jaStimmen, gesamtStimmen: gesamt,
+        agentPunkte: lobby.settings.punkteAktiv ? 1 : 0
+      });
       io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
     }
   });
@@ -309,43 +334,38 @@ io.on('connection', (socket) => {
     io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
   });
 
-  // AGENT GUESS
+  // --- AGENT GUESS ---
   socket.on('agent:raten', ({ ortName }) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.status !== 'laufend') return;
     if (socket.id !== getAgentId(lobby)) return;
     const richtig = ortName.toLowerCase().trim() === lobby.aktuelleRunde.ort.name.toLowerCase().trim();
-    stopTimer(lobby);
     if (richtig && lobby.settings.punkteAktiv) addPunkte(lobby, socket.id, 3);
-    lobby.status = 'aufloesung';
-    io.to(lobby.code).emit('runde:aufloesung', {
-      ort: { name: lobby.aktuelleRunde.ort.name, emoji: lobby.aktuelleRunde.ort.emoji },
-      karten: lobby.aktuelleRunde.karten,
-      spieler: lobby.players,
-      grund: richtig ? 'agent_richtig' : 'agent_falsch',
-      agentGuess: ortName,
-      agentPunkte: richtig ? 3 : 0,
-      punkteUpdate: buildPunkteUpdate(lobby)
+    aufloesung(lobby, richtig ? 'agent_richtig' : 'agent_falsch', {
+      agentGuess: ortName, agentPunkte: richtig ? 3 : 0
     });
-    io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
   });
 
   socket.on('disconnect', () => {
     const code = socket.data.lobbyCode;
     if (!code || !lobbies[code]) return;
     const lobby = lobbies[code];
+    const name = socket.data.name || 'Jemand';
     delete lobby.players[socket.id];
     if (lobby.hostId === socket.id) {
       const remaining = Object.keys(lobby.players);
-      if (remaining.length === 0) { stopTimer(lobby); delete lobbies[code]; return; }
+      if (!remaining.length) { stopTimer(lobby); delete lobbies[code]; return; }
       lobby.hostId = remaining[0];
     }
-    if (lobby.voting) lobby.voting.gesamt = Math.max(1, Object.keys(lobby.players).length);
+    if (lobby.voting) {
+      lobby.voting.gesamt = Object.keys(lobby.players).length;
+      delete lobby.voting.stimmen[socket.id];
+    }
     io.to(code).emit('lobby:update', getLobbyState(code));
-    io.to(code).emit('system:nachricht', { text: `${socket.data.name || 'Jemand'} hat die Lobby verlassen.` });
+    io.to(code).emit('system:nachricht', { text: `${name} hat die Lobby verlassen.` });
   });
 });
 
 app.get('/health', (_, res) => res.json({ ok: true, lobbies: Object.keys(lobbies).length }));
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`Server auf Port ${PORT}`));
+server.listen(PORT, () => console.log(`Server laeuft auf Port ${PORT}`));

@@ -1,10 +1,10 @@
 import styles from './AufloeungScreen.module.css';
 
 const GRUENDE = {
-  enttarnt: { emoji: '🎉', title: 'Agent enttarnt!', farbe: 'green' },
-  agent_richtig: { emoji: '🕵️', title: 'Agent hat den Ort erraten!', farbe: 'red' },
-  agent_falsch: { emoji: '❌', title: 'Agent lag falsch!', farbe: 'green' },
-  zeit: { emoji: '⏱', title: 'Zeit abgelaufen!', farbe: 'red' }
+  enttarnt:     { emoji: '🎉', title: 'Agent enttarnt!',           farbe: 'gruen' },
+  agent_richtig:{ emoji: '🕵️', title: 'Agent hat den Ort erraten!', farbe: 'rot'  },
+  agent_falsch: { emoji: '❌', title: 'Agent lag falsch!',          farbe: 'gruen' },
+  zeit:         { emoji: '⏱',  title: 'Zeit abgelaufen!',           farbe: 'rot'  }
 };
 
 export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechsteRunde }) {
@@ -13,10 +13,9 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
   const info = GRUENDE[grund] || GRUENDE.enttarnt;
   const punkteAktiv = lobby?.settings?.punkteAktiv;
 
-  const spielerListe = Object.entries(karten).map(([id, karte]) => ({
-    id, name: spieler[id]?.name || '?', ...karte
+  const spielerListe = Object.entries(karten).map(([id, k]) => ({
+    id, name: spieler[id]?.name || '?', ...k
   }));
-
   const agent = spielerListe.find(s => s.typ === 'agent');
 
   return (
@@ -24,20 +23,25 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
       <div className={styles.container}>
 
         <div className={`${styles.header} fade-in`}>
-          <div className={styles.grundEmoji}>{info.emoji}</div>
-          <h1 className={`${styles.grundTitle} ${info.farbe === 'red' ? styles.titelRot : styles.titelGruen}`}>
+          <div className={styles.emoji}>{info.emoji}</div>
+          <h1 className={`${styles.title} ${info.farbe === 'rot' ? styles.rot : styles.gruen}`}>
             {info.title}
           </h1>
-          {anklaegerName && <div className={styles.sub}>Anklage von <strong>{anklaegerName}</strong></div>}
+          {anklaegerName && (
+            <div className={styles.sub}>Anklage von <strong>{anklaegerName}</strong></div>
+          )}
           {agentGuess && (
             <div className={styles.sub}>
               Agent tippte: <strong>{agentGuess}</strong> {grund === 'agent_richtig' ? '✓' : '✗'}
             </div>
           )}
+          {agentPunkte > 0 && (
+            <div className={styles.sub}>Agent erhielt <strong>+{agentPunkte} {agentPunkte === 1 ? 'Punkt' : 'Punkte'}</strong></div>
+          )}
         </div>
 
         <div className={`${styles.ortBox} fade-in`} style={{ animationDelay: '0.05s' }}>
-          <div className={styles.ortLabel}>Der geheime Ort war</div>
+          <div className={styles.ortLabel}>Der geheime Ort</div>
           <div className={styles.ortName}>{ort.emoji} {ort.name}</div>
         </div>
 
@@ -46,12 +50,11 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
           <div className={styles.agentName}>🕵️ {agent?.name || '?'}</div>
         </div>
 
-        {/* Punkte-Update */}
-        {punkteAktiv && punkteUpdate && (
+        {punkteAktiv && punkteUpdate && punkteUpdate.length > 0 && (
           <div className={`${styles.punkteBox} fade-in`} style={{ animationDelay: '0.15s' }}>
             <div className="label">Punktestand</div>
-            <div className={styles.punkteGrid}>
-              {punkteUpdate.sort((a, b) => b.punkte - a.punkte).map((p, i) => (
+            <div className={styles.punkteListe}>
+              {[...punkteUpdate].sort((a, b) => b.punkte - a.punkte).map((p, i) => (
                 <div key={p.id} className={`${styles.punkteItem} ${p.id === spielerId ? styles.punkteIch : ''}`}>
                   <span className={styles.platz}>{i + 1}.</span>
                   <span className={styles.punkteName}>{p.name}</span>
@@ -62,22 +65,22 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
           </div>
         )}
 
-        {/* Alle Karten */}
-        <div className={`${styles.kartenGrid} fade-in`} style={{ animationDelay: '0.2s' }}>
+        <div className={`${styles.kartenListe} fade-in`} style={{ animationDelay: '0.2s' }}>
           <div className="label">Alle Karten</div>
           {spielerListe.map(s => (
-            <div key={s.id} className={`${styles.karteItem} ${s.typ === 'agent' ? styles.karteRot : styles.karteGruen}`}>
-              <div className={styles.karteKopf}>
-                <div className={styles.karteAvatar}>{s.name.charAt(0).toUpperCase()}</div>
-                <div style={{ flex: 1 }}>
-                  <div className={styles.karteName}>{s.name} {s.id === spielerId && <span className="text-dim" style={{ fontSize: 11 }}>(Du)</span>}</div>
-                  {s.typ !== 'agent' && <div className={styles.karteRolle}>{s.rolle}</div>}
+            <div key={s.id} className={`${styles.karteItem} ${s.typ === 'agent' ? styles.karteItemAgent : styles.karteItemSpieler}`}>
+              <div className={styles.karteAvatar}>{s.name.charAt(0).toUpperCase()}</div>
+              <div style={{ flex: 1 }}>
+                <div className={styles.karteName}>
+                  {s.name}
+                  {s.id === spielerId && <span className="text-dim" style={{ fontSize: 11, marginLeft: 6 }}>(Du)</span>}
                 </div>
-                {s.typ === 'agent'
-                  ? <span className="tag tag-agent">Agent</span>
-                  : <span className="tag tag-spieler">Spieler</span>
-                }
+                {s.typ !== 'agent' && <div className={styles.karteRolle}>{s.rolle}</div>}
               </div>
+              {s.typ === 'agent'
+                ? <span className="tag tag-agent">Agent</span>
+                : <span className="tag tag-spieler">Spieler</span>
+              }
             </div>
           ))}
         </div>
@@ -88,14 +91,10 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
               ▶ Naechste Runde
             </button>
           ) : (
-            <div style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)', padding: '14px 32px', color: 'var(--text2)', fontSize: 14
-            }}>
-              Warte auf den Host...
-            </div>
+            <div className={styles.warteHost}>Warte auf den Host...</div>
           )}
         </div>
+
       </div>
     </div>
   );
