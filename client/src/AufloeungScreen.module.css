@@ -1,0 +1,137 @@
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 20px;
+  background: radial-gradient(ellipse at top, rgba(201,168,76,0.04) 0%, transparent 60%);
+}
+
+.container {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.reveal {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.agentBox {
+  background: var(--red-dim);
+  border: 1px solid rgba(224,85,85,0.3);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.agentLabel {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(224,85,85,0.7);
+}
+
+.agentName {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.kartenGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.karteItem {
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.agentKarte {
+  background: var(--red-dim);
+  border: 1px solid rgba(224,85,85,0.25);
+}
+
+.spielerKarte2 {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.karteKopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.karteAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.karteName {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.karteTag {
+  margin-left: auto;
+}
+
+.karteRolle {
+  padding-left: 46px;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.warte {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 32px;
+}
