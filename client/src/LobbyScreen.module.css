@@ -1,45 +1,49 @@
 .wrapper {
   min-height: 100vh;
-  padding: 24px;
-  max-width: 900px;
+  padding: 20px;
+  max-width: 860px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  flex: 1;
+  gap: 20px;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.empfehlung {
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 20px;
+  padding: 3px 12px;
+  display: inline-block;
 }
 
 .codeBox {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 14px 18px;
   text-align: center;
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .codeValue {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.25em;
   color: var(--accent);
@@ -47,16 +51,10 @@
   margin-bottom: 10px;
 }
 
-.codeActions {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-}
-
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 @media (max-width: 600px) {
@@ -66,19 +64,19 @@
 .spielerListe {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 
 .spielerItem {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .spielerAvatar {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--accent-dim);
   border: 1px solid rgba(201,168,76,0.2);
@@ -86,7 +84,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -94,23 +92,33 @@
 .spielerName {
   flex: 1;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 14px;
+}
+
+.punkte {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 2px 8px;
+  border-radius: 20px;
 }
 
 .settingRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border);
+  font-size: 13px;
 }
-.settingRow:first-of-type { margin-top: 12px; }
+.settingRow:first-of-type { margin-top: 10px; }
 
 .warteBox {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,6 +133,35 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+.howto {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.howtoTitle {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.howtoTitle::-webkit-details-marker { display: none; }
+
+.howtoContent {
+  padding: 0 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
 /* Modal */
 .modalOverlay {
   position: fixed;
@@ -136,17 +173,16 @@
   justify-content: center;
   padding: 20px;
   z-index: 1000;
-  animation: fadeIn 0.2s ease;
 }
 
 .modal {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 24px;
   width: 100%;
-  max-width: 560px;
-  max-height: 80vh;
+  max-width: 540px;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: var(--shadow);
 }
@@ -160,45 +196,118 @@
   gap: 10px;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg2);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.tab {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tabAktiv {
+  background: var(--surface2);
+  color: var(--text);
+}
+
 .orteGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-@media (max-width: 480px) {
-  .orteGrid { grid-template-columns: 1fr; }
+  gap: 6px;
+  max-height: 50vh;
+  overflow-y: auto;
 }
 
 .ortToggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 7px;
+  padding: 8px 10px;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text3);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
-  text-align: left;
-  position: relative;
 }
-.ortToggle:hover {
-  border-color: var(--accent);
-  color: var(--text);
-}
-.ortAktiv {
-  border-color: rgba(201,168,76,0.4);
-  background: var(--accent-dim);
-  color: var(--text);
+.ortToggle:hover { border-color: var(--accent); color: var(--text); }
+.ortAktiv { border-color: rgba(201,168,76,0.4); background: var(--accent-dim); color: var(--text); }
+
+/* Spiel settings */
+.spielSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.checkmark {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 12px;
+.settingBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settingBlockTitle {
+  font-size: 13px;
   font-weight: 700;
+  color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+}
+.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.timerOptionen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.modusBtn {
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 8px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text3);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+.modusBtn:hover { border-color: var(--accent); color: var(--text); }
+.modusBtnAktiv { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+
+.punkteInfo {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
 }

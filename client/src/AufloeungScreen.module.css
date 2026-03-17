@@ -3,16 +3,15 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 32px 20px;
-  background: radial-gradient(ellipse at top, rgba(201,168,76,0.04) 0%, transparent 60%);
+  padding: 24px 20px;
 }
 
 .container {
   width: 100%;
-  max-width: 640px;
+  max-width: 580px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .header {
@@ -20,20 +19,42 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.reveal {
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text3);
-}
+.grundEmoji { font-size: 48px; margin-bottom: 4px; }
 
-.title {
+.grundTitle {
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 900;
+}
+
+.titelGruen { color: var(--green); }
+.titelRot { color: var(--red); }
+
+.sub { font-size: 14px; color: var(--text2); }
+
+.ortBox {
+  background: var(--accent-dim);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.ortLabel {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.7);
+  margin-bottom: 6px;
+}
+
+.ortName {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
   color: var(--accent);
 }
 
@@ -41,62 +62,86 @@
   background: var(--red-dim);
   border: 1px solid rgba(224,85,85,0.3);
   border-radius: var(--radius);
-  padding: 20px 24px;
+  padding: 14px 20px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
 }
 
 .agentLabel {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(224,85,85,0.7);
+  margin-bottom: 4px;
 }
 
 .agentName {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--red);
 }
 
-.kartenGrid {
+/* Punkte */
+.punkteBox {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.karteItem {
+.punkteGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.punkteItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 14px 18px;
+  font-size: 14px;
+}
+
+.punkteIch {
+  border-color: rgba(201,168,76,0.3);
+  background: var(--accent-dim);
+}
+
+.platz { color: var(--text3); font-size: 12px; min-width: 20px; }
+.punkteName { flex: 1; font-weight: 500; }
+.punkteZahl { font-weight: 700; color: var(--accent); }
+
+/* Karten */
+.kartenGrid {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  animation: fadeIn 0.4s ease forwards;
 }
 
-.agentKarte {
-  background: var(--red-dim);
-  border: 1px solid rgba(224,85,85,0.25);
+.karteItem {
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
 }
 
-.spielerKarte2 {
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
+.karteRot { background: var(--red-dim); border: 1px solid rgba(224,85,85,0.2); }
+.karteGruen { background: var(--surface); border: 1px solid var(--border); }
 
 .karteKopf {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .karteAvatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--surface2);
   display: flex;
@@ -108,30 +153,11 @@
   flex-shrink: 0;
 }
 
-.karteName {
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.karteTag {
-  margin-left: auto;
-}
-
-.karteRolle {
-  padding-left: 46px;
-  font-size: 13px;
-  color: var(--text2);
-}
+.karteName { font-weight: 600; font-size: 14px; }
+.karteRolle { font-size: 12px; color: var(--text3); margin-top: 2px; }
 
 .actions {
   display: flex;
   justify-content: center;
-  padding: 8px 0;
-}
-
-.warte {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 32px;
+  padding: 8px 0 16px;
 }
