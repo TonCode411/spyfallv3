@@ -128,8 +128,8 @@ export default function App() {
     });
   });
 
-  const handleRundeStarten = () => {
-    socket.emit('runde:starten', {}, (res) => {
+  const handleRundeStarten = (testModus = false) => {
+    socket.emit('runde:starten', { testModus }, (res) => {
       if (res && !res.success) alert(res.error);
     });
   };

@@ -44,7 +44,7 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
   const handleRundeStarten = () => {
     if (!verbunden) return alert('Keine Verbindung zum Server. Bitte Seite neu laden.');
     if (anzahl < 3 && !testModus) return alert('Mindestens 3 Spieler benoetigt. Oder Test-Modus aktivieren.');
-    onRundeStarten();
+    onRundeStarten(testModus);
   };
 
   const timerLabel = () => {

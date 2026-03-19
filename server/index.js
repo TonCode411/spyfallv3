@@ -270,11 +270,11 @@ io.on('connection', (socket) => {
     io.to(lobby.code).emit('lobby:update', getLobbyState(lobby.code));
   });
 
-  socket.on('runde:starten', (_, cb) => {
+  socket.on('runde:starten', ({ testModus: clientTestModus } = {}, cb) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.hostId !== socket.id) return;
     const n = Object.keys(lobby.players).length;
-    const testModus = lobby.settings.testModus === true;
+    const testModus = clientTestModus === true || lobby.settings.testModus === true;
     if (n < 3 && !testModus) { if (cb) cb({ success: false, error: 'Test-Modus aktivieren oder mehr Spieler einladen!' }); return; }
     const result = dealCards(lobby);
     if (result.error) { if (cb) cb({ success: false, error: result.error }); return; }
