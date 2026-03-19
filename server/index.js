@@ -236,8 +236,19 @@ io.on('connection', (socket) => {
     io.to(code).emit('lobby:update', getLobbyState(code));
   });
 
-  socket.on('state:sync', () => {
-    const code = socket.data.lobbyCode;
+  socket.on('state:sync', ({ code: syncCode, name: syncName } = {}) => {
+    // Restore socket.data if lost after server restart
+    const code = socket.data.lobbyCode || syncCode;
+    if (code && !socket.data.lobbyCode) {
+      socket.data.lobbyCode = code;
+      socket.join(code);
+      if (syncName) socket.data.name = syncName;
+      // Re-add player to lobby if needed
+      const l = lobbies[code];
+      if (l && !l.players[socket.id]) {
+        l.players[socket.id] = { id: socket.id, name: syncName || 'Spieler', punkte: 0 };
+      }
+    }
     const lobby = lobbies[code];
     if (!lobby) return;
     socket.emit('lobby:update', getLobbyState(code));

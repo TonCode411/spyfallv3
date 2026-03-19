@@ -23,6 +23,8 @@ export default function App() {
   const [verbunden, setVerbunden] = useState(socket.connected);
 
   const voteErgebnisTimer = useRef(null);
+  const lobbyCodeRef = useRef(null);
+  const spielerNameRef = useRef(null);
 
   function pushNachricht(text) {
     setNachrichten(prev => [...prev.slice(-3), text]);
@@ -34,12 +36,12 @@ export default function App() {
     // if already connected, sync immediately
     if (socket.connected) {
       setVerbunden(true);
-      socket.emit('state:sync');
+      socket.emit('state:sync', { code: lobbyCodeRef.current, name: spielerNameRef.current });
     }
 
     socket.on('connect', () => {
       setVerbunden(true);
-      socket.emit('state:sync');
+      socket.emit('state:sync', { code: lobbyCodeRef.current, name: spielerNameRef.current });
     });
 
     socket.on('disconnect', () => setVerbunden(false));
@@ -116,14 +118,14 @@ export default function App() {
 
   const handleErstellen = (name) => new Promise((res, rej) => {
     socket.emit('lobby:erstellen', { name }, (r) => {
-      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
+      if (r.success) { setSpielerID(r.spielerId); lobbyCodeRef.current = r.code; spielerNameRef.current = name; setScreen('lobby'); res(); }
       else rej(new Error(r.error));
     });
   });
 
   const handleBeitreten = (name, code) => new Promise((res, rej) => {
     socket.emit('lobby:beitreten', { code, name }, (r) => {
-      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
+      if (r.success) { setSpielerID(r.spielerId); lobbyCodeRef.current = code; spielerNameRef.current = name; setScreen('lobby'); res(); }
       else rej(new Error(r.error));
     });
   });
