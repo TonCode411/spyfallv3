@@ -274,8 +274,8 @@ io.on('connection', (socket) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.hostId !== socket.id) return;
     const n = Object.keys(lobby.players).length;
-    const minSpieler = lobby.settings.testModus ? 1 : 3;
-    if (n < minSpieler) { if (cb) cb({ success: false, error: 'Mindestens 3 Spieler benoetigt' }); return; }
+    const testModus = lobby.settings.testModus === true;
+    if (n < 3 && !testModus) { if (cb) cb({ success: false, error: 'Test-Modus aktivieren oder mehr Spieler einladen!' }); return; }
     const result = dealCards(lobby);
     if (result.error) { if (cb) cb({ success: false, error: result.error }); return; }
 
