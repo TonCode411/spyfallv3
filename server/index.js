@@ -187,7 +187,8 @@ const DEFAULT_SETTINGS = {
   timerModus: 'standard',
   timerSekunden: 300,
   punkteAktiv: false,
-  nonCommMode: false
+  nonCommMode: false,
+  testModus: false
 };
 
 io.on('connection', (socket) => {

@@ -6,13 +6,13 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
   const spielerListe = lobby.spieler || [];
   const anzahl = spielerListe.length;
   const istHost = lobby.hostId === spielerId;
+  const s = lobby.settings || {};
 
+  // testModus is local state so it always works regardless of server sync
+  const [testModus, setTestModus] = useState(false);
   const [settingsOffen, setSettingsOffen] = useState(false);
   const [aktTab, setAktTab] = useState('orte');
   const [kopiert, setKopiert] = useState(false);
-
-  const s = lobby.settings || {};
-  const testModus = s.testModus || false;
   const [aktivierteOrte, setAktivierteOrte] = useState(s.aktivierteOrte || alleOrte.map(o => o.id));
   const [timerAktiv, setTimerAktiv] = useState(s.timerAktiv || false);
   const [timerModus, setTimerModus] = useState(s.timerModus || 'standard');
@@ -35,6 +35,18 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
     setSettingsOffen(false);
   };
 
+  const handleTestModus = () => {
+    const neuerWert = !testModus;
+    setTestModus(neuerWert);
+    onSettingsUpdate({ testModus: neuerWert });
+  };
+
+  const handleRundeStarten = () => {
+    if (!verbunden) return alert('Keine Verbindung zum Server. Bitte Seite neu laden.');
+    if (anzahl < 3 && !testModus) return alert('Mindestens 3 Spieler benoetigt. Oder Test-Modus aktivieren.');
+    onRundeStarten();
+  };
+
   const timerLabel = () => {
     if (!timerAktiv) return 'Kein Timer';
     const n = anzahl || 5;
@@ -47,7 +59,7 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
     <div className={styles.wrapper}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>🕵️ Agenten Undercover</h1>
+          <h1 className={styles.title}>🕵️ Agenten Undercover <span style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace'}}>v5</span></h1>
           {anzahl >= 3 && anzahl < 5 && (
             <div className={styles.tipp}>💡 Am besten mit 5+ Spielern</div>
           )}
@@ -99,27 +111,26 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
 
           {istHost ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {!verbunden && (
-                <div style={{ background: 'var(--red-dim)', border: '1px solid rgba(224,85,85,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 12, color: 'var(--red)', textAlign: 'center' }}>
-                  ⚠️ Keine Verbindung – warte...
-                </div>
-              )}
+              <div style={{ fontSize: 11, textAlign: 'center', color: verbunden ? 'var(--green)' : 'var(--red)' }}>
+                {verbunden ? '● Verbunden' : '● Keine Verbindung'}
+              </div>
               <button
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', padding: 15, fontSize: 16 }}
-                onClick={onRundeStarten}
-                disabled={!verbunden || (anzahl < 3 && !testModus)}
+                onClick={handleRundeStarten}
               >
                 🎮 Runde starten
               </button>
               <button
                 className="btn btn-ghost"
-                style={{ width: '100%', justifyContent: 'center', fontSize: 12,
-                  ...(testModus ? { borderColor: 'rgba(201,168,76,0.4)', color: 'var(--accent)' } : { opacity: 0.6 }) }}
-                onClick={() => onSettingsUpdate({ testModus: !testModus })}
-                disabled={!verbunden}
+                style={{
+                  width: '100%', justifyContent: 'center', fontSize: 12,
+                  borderColor: testModus ? 'rgba(201,168,76,0.6)' : undefined,
+                  color: testModus ? 'var(--accent)' : undefined,
+                }}
+                onClick={handleTestModus}
               >
-                🧪 Test-Modus {testModus ? 'AN (Solo spielbar)' : 'AUS'}
+                🧪 Test-Modus: {testModus ? 'AN' : 'AUS'}
               </button>
             </div>
           ) : (
