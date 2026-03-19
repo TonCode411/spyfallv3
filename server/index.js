@@ -34,7 +34,7 @@ function shuffle(arr) {
 function dealCards(lobby) {
   const playerList = Object.values(lobby.players);
   const n = playerList.length;
-  if (n < 3) return { error: 'Mindestens 3 Spieler benoetigt' };
+  if (n < 1) return { error: 'Keine Spieler' };
   const verfuegbareOrte = ORTE.filter(o => lobby.settings.aktivierteOrte.includes(o.id));
   if (!verfuegbareOrte.length) return { error: 'Keine Orte aktiviert' };
   const ort = verfuegbareOrte[Math.floor(Math.random() * verfuegbareOrte.length)];
@@ -273,7 +273,8 @@ io.on('connection', (socket) => {
     const lobby = lobbies[socket.data.lobbyCode];
     if (!lobby || lobby.hostId !== socket.id) return;
     const n = Object.keys(lobby.players).length;
-    if (n < 3) { if (cb) cb({ success: false, error: 'Mindestens 3 Spieler benoetigt' }); return; }
+    const minSpieler = lobby.settings.testModus ? 1 : 3;
+    if (n < minSpieler) { if (cb) cb({ success: false, error: 'Mindestens 3 Spieler benoetigt' }); return; }
     const result = dealCards(lobby);
     if (result.error) { if (cb) cb({ success: false, error: result.error }); return; }
 

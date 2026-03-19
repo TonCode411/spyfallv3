@@ -97,10 +97,19 @@ export default function LobbyScreen({ lobby, spielerId, onRundeStarten, onSettin
           </div>
 
           {istHost ? (
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 15, fontSize: 16 }}
-              onClick={onRundeStarten} disabled={anzahl < 3}>
-              🎮 Runde starten
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 15, fontSize: 16 }}
+                onClick={onRundeStarten} disabled={anzahl < 3 && !s.testModus}>
+                🎮 Runde starten
+              </button>
+              <button
+                className="btn btn-ghost"
+                style={{ width: '100%', justifyContent: 'center', fontSize: 12, opacity: 0.5,
+                  ...(s.testModus ? { borderColor: 'rgba(201,168,76,0.4)', color: 'var(--accent)', opacity: 1 } : {}) }}
+                onClick={() => onSettingsUpdate({ testModus: !s.testModus })}>
+                🧪 Test-Modus {s.testModus ? 'AN (Solo spielbar)' : 'AUS'}
+              </button>
+            </div>
           ) : (
             <div className={styles.warteBox}>
               <div className={styles.pulse} />
