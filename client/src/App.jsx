@@ -20,9 +20,8 @@ export default function App() {
   const [voteData, setVoteData] = useState(null);
   const [voteErgebnis, setVoteErgebnis] = useState(null);
   const [roundSettings, setRoundSettings] = useState(null);
-  const [verbunden, setVerbunden] = useState(true);
+  const [verbunden, setVerbunden] = useState(socket.connected);
 
-  const keepaliveRef = useRef(null);
   const voteErgebnisTimer = useRef(null);
 
   function pushNachricht(text) {
@@ -31,11 +30,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    socket.connect();
-
-    keepaliveRef.current = setInterval(() => {
-      if (socket.connected) socket.emit('ping:keepalive');
-    }, 20000);
+    // socket already auto-connects via socket.js
+    // if already connected, sync immediately
+    if (socket.connected) {
+      setVerbunden(true);
+      socket.emit('state:sync');
+    }
 
     socket.on('connect', () => {
       setVerbunden(true);
@@ -44,9 +44,7 @@ export default function App() {
 
     socket.on('disconnect', () => setVerbunden(false));
 
-    socket.on('lobby:update', (data) => {
-      setLobby(data);
-    });
+    socket.on('lobby:update', (data) => setLobby(data));
 
     socket.on('runde:karte', ({ karte: k, alleOrte: orte, runde: r, settings }) => {
       setKarte(k);
@@ -61,9 +59,7 @@ export default function App() {
       setScreen('spiel');
     });
 
-    socket.on('timer:tick', ({ restzeit, gesamt }) => {
-      setTimer({ restzeit, gesamt });
-    });
+    socket.on('timer:tick', ({ restzeit, gesamt }) => setTimer({ restzeit, gesamt }));
 
     socket.on('runde:aufloesung', (data) => {
       setAufloesung(data);
@@ -114,7 +110,6 @@ export default function App() {
       socket.off('vote:ergebnis');
       socket.off('vote:abgebrochen');
       socket.off('system:nachricht');
-      if (keepaliveRef.current) clearInterval(keepaliveRef.current);
       if (voteErgebnisTimer.current) clearTimeout(voteErgebnisTimer.current);
     };
   }, []);
@@ -154,10 +149,10 @@ export default function App() {
       {!verbunden && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#c0392b', color: 'white', padding: '8px',
-          textAlign: 'center', fontSize: 13, fontWeight: 600
+          background: '#c0392b', color: 'white', padding: '10px',
+          textAlign: 'center', fontSize: 14, fontWeight: 600
         }}>
-          Verbindung unterbrochen – wird wiederhergestellt...
+          ⚠️ Keine Verbindung zum Server – wird wiederhergestellt...
         </div>
       )}
 
@@ -166,7 +161,9 @@ export default function App() {
       )}
       {screen === 'lobby' && lobby && (
         <LobbyScreen
-          lobby={lobby} spielerId={spielerId}
+          lobby={lobby}
+          spielerId={spielerId}
+          verbunden={verbunden}
           onRundeStarten={handleRundeStarten}
           onSettingsUpdate={(s) => socket.emit('settings:update', s)}
         />

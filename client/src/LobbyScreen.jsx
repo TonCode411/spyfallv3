@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './LobbyScreen.module.css';
 
-export default function LobbyScreen({ lobby, spielerId, onRundeStarten, onSettingsUpdate }) {
+export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarten, onSettingsUpdate }) {
   const alleOrte = lobby.alleOrte || [];
   const spielerListe = lobby.spieler || [];
   const anzahl = spielerListe.length;
@@ -99,15 +99,26 @@ export default function LobbyScreen({ lobby, spielerId, onRundeStarten, onSettin
 
           {istHost ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 15, fontSize: 16 }}
-                onClick={onRundeStarten} disabled={anzahl < 3 && !testModus}>
+              {!verbunden && (
+                <div style={{ background: 'var(--red-dim)', border: '1px solid rgba(224,85,85,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 12, color: 'var(--red)', textAlign: 'center' }}>
+                  ⚠️ Keine Verbindung – warte...
+                </div>
+              )}
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', padding: 15, fontSize: 16 }}
+                onClick={onRundeStarten}
+                disabled={!verbunden || (anzahl < 3 && !testModus)}
+              >
                 🎮 Runde starten
               </button>
               <button
                 className="btn btn-ghost"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 12,
-                  ...(testModus ? { borderColor: 'rgba(201,168,76,0.4)', color: 'var(--accent)', opacity: 1 } : { opacity: 0.5 }) }}
-                onClick={() => onSettingsUpdate({ testModus: !testModus })}>
+                  ...(testModus ? { borderColor: 'rgba(201,168,76,0.4)', color: 'var(--accent)' } : { opacity: 0.6 }) }}
+                onClick={() => onSettingsUpdate({ testModus: !testModus })}
+                disabled={!verbunden}
+              >
                 🧪 Test-Modus {testModus ? 'AN (Solo spielbar)' : 'AUS'}
               </button>
             </div>
