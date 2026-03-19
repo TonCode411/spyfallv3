@@ -22,48 +22,30 @@ export default function App() {
   const [roundSettings, setRoundSettings] = useState(null);
   const [verbunden, setVerbunden] = useState(true);
 
-  // Refs so event handlers always have current values
-  const screenRef = useRef(screen);
-  screenRef.current = screen;
   const keepaliveRef = useRef(null);
+  const voteErgebnisTimer = useRef(null);
 
   function pushNachricht(text) {
     setNachrichten(prev => [...prev.slice(-3), text]);
     setTimeout(() => setNachrichten(prev => prev.slice(1)), 5000);
   }
 
-  function startKeepalive() {
-    if (keepaliveRef.current) clearInterval(keepaliveRef.current);
+  useEffect(() => {
+    socket.connect();
+
     keepaliveRef.current = setInterval(() => {
       if (socket.connected) socket.emit('ping:keepalive');
     }, 20000);
-  }
-
-  useEffect(() => {
-    socket.connect();
-    startKeepalive();
 
     socket.on('connect', () => {
       setVerbunden(true);
-      // Re-sync state after reconnect
-      const code = sessionStorage.getItem('lobbyCode');
-      const name = sessionStorage.getItem('spielerName');
-      const sid = sessionStorage.getItem('spielerId');
-      if (code && name && sid && screenRef.current !== 'start') {
-        socket.emit('state:sync', {});
-      }
+      socket.emit('state:sync');
     });
 
-    socket.on('disconnect', () => {
-      setVerbunden(false);
-    });
+    socket.on('disconnect', () => setVerbunden(false));
 
     socket.on('lobby:update', (data) => {
       setLobby(data);
-      // If lobby goes back to wartend and we're in aufloesung, go to lobby
-      if (data.status === 'wartend' && screenRef.current === 'aufloesung') {
-        setScreen('lobby');
-      }
     });
 
     socket.on('runde:karte', ({ karte: k, alleOrte: orte, runde: r, settings }) => {
@@ -107,7 +89,8 @@ export default function App() {
       setVoteData(null);
       setVoteErgebnis(data);
       setScreen('spiel');
-      setTimeout(() => setVoteErgebnis(null), 6000);
+      if (voteErgebnisTimer.current) clearTimeout(voteErgebnisTimer.current);
+      voteErgebnisTimer.current = setTimeout(() => setVoteErgebnis(null), 6000);
     });
 
     socket.on('vote:abgebrochen', () => {
@@ -132,32 +115,21 @@ export default function App() {
       socket.off('vote:abgebrochen');
       socket.off('system:nachricht');
       if (keepaliveRef.current) clearInterval(keepaliveRef.current);
+      if (voteErgebnisTimer.current) clearTimeout(voteErgebnisTimer.current);
     };
   }, []);
 
   const handleErstellen = (name) => new Promise((res, rej) => {
     socket.emit('lobby:erstellen', { name }, (r) => {
-      if (r.success) {
-        setSpielerID(r.spielerId);
-        sessionStorage.setItem('lobbyCode', r.code);
-        sessionStorage.setItem('spielerName', name);
-        sessionStorage.setItem('spielerId', r.spielerId);
-        setScreen('lobby');
-        res();
-      } else rej(new Error(r.error));
+      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
+      else rej(new Error(r.error));
     });
   });
 
   const handleBeitreten = (name, code) => new Promise((res, rej) => {
     socket.emit('lobby:beitreten', { code, name }, (r) => {
-      if (r.success) {
-        setSpielerID(r.spielerId);
-        sessionStorage.setItem('lobbyCode', r.code);
-        sessionStorage.setItem('spielerName', name);
-        sessionStorage.setItem('spielerId', r.spielerId);
-        setScreen('lobby');
-        res();
-      } else rej(new Error(r.error));
+      if (r.success) { setSpielerID(r.spielerId); setScreen('lobby'); res(); }
+      else rej(new Error(r.error));
     });
   });
 
@@ -168,7 +140,6 @@ export default function App() {
   };
 
   const handleNaechsteRunde = () => {
-    // Just go back to lobby - host can start next round from there
     setKarte(null);
     setAufloesung(null);
     setAusgeschlosseneOrte([]);
@@ -178,24 +149,15 @@ export default function App() {
     setScreen('lobby');
   };
 
-  const handleSettingsUpdate = (s) => socket.emit('settings:update', s);
-  const handleOrtToggle = (ortId) => socket.emit('ort:markieren', { ortId });
-  const handleVoteStarten = ({ beschuldigter, these }) => socket.emit('vote:starten', { beschuldigter, these });
-  const handleVoteAbgeben = (ja) => socket.emit('vote:abgeben', { ja });
-  const handleVoteAbbrechen = () => socket.emit('vote:abbrechen');
-  const handleAgentRaten = (ortName) => socket.emit('agent:raten', { ortName });
-
-  const spielerListe = lobby?.spieler || [];
-
   return (
     <>
       {!verbunden && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: 'var(--red)', color: 'white',
-          padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600
+          background: '#c0392b', color: 'white', padding: '8px',
+          textAlign: 'center', fontSize: 13, fontWeight: 600
         }}>
-          ⚠️ Verbindung unterbrochen – wird wiederhergestellt...
+          Verbindung unterbrochen – wird wiederhergestellt...
         </div>
       )}
 
@@ -206,7 +168,7 @@ export default function App() {
         <LobbyScreen
           lobby={lobby} spielerId={spielerId}
           onRundeStarten={handleRundeStarten}
-          onSettingsUpdate={handleSettingsUpdate}
+          onSettingsUpdate={(s) => socket.emit('settings:update', s)}
         />
       )}
       {screen === 'spiel' && (
@@ -214,9 +176,9 @@ export default function App() {
           karte={karte} alleOrte={alleOrte} runde={runde}
           lobby={lobby} spielerId={spielerId}
           ausgeschlosseneOrte={ausgeschlosseneOrte}
-          onOrtToggle={handleOrtToggle}
-          onVoteStarten={handleVoteStarten}
-          onAgentRaten={handleAgentRaten}
+          onOrtToggle={(ortId) => socket.emit('ort:markieren', { ortId })}
+          onVoteStarten={({ beschuldigter, these }) => socket.emit('vote:starten', { beschuldigter, these })}
+          onAgentRaten={(ortName) => socket.emit('agent:raten', { ortName })}
           voteErgebnis={voteErgebnis}
           timer={timer}
           roundSettings={roundSettings}
@@ -226,9 +188,9 @@ export default function App() {
         <VoteScreen
           voteData={voteData}
           spielerId={spielerId}
-          spielerListe={spielerListe}
-          onVoteAbgeben={handleVoteAbgeben}
-          onVoteAbbrechen={handleVoteAbbrechen}
+          spielerListe={lobby?.spieler || []}
+          onVoteAbgeben={(ja) => socket.emit('vote:abgeben', { ja })}
+          onVoteAbbrechen={() => socket.emit('vote:abbrechen')}
         />
       )}
       {screen === 'aufloesung' && aufloesung && (

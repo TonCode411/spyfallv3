@@ -57,7 +57,7 @@
 
 .spielerItem { display: flex; align-items: center; gap: 8px; }
 
-.spielerAvatar {
+.avatar {
   width: 32px; height: 32px;
   border-radius: 50%;
   background: var(--accent-dim);
@@ -70,7 +70,7 @@
 .spielerName { flex: 1; font-weight: 500; font-size: 14px; }
 .punkte { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 20px; }
 
-.settingRow {
+.row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -78,7 +78,7 @@
   border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
-.settingRow:first-of-type { margin-top: 10px; }
+.row:first-of-type { margin-top: 10px; }
 
 .warteBox {
   background: var(--surface);
@@ -91,7 +91,7 @@
   gap: 12px;
 }
 
-.wartePulse {
+.pulse {
   width: 8px; height: 8px;
   border-radius: 50%;
   background: var(--accent);
@@ -105,16 +105,16 @@
   overflow: hidden;
 }
 
-.howtoSummary {
+.howtoTitle {
   padding: 13px 16px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   list-style: none;
 }
-.howtoSummary::-webkit-details-marker { display: none; }
+.howtoTitle::-webkit-details-marker { display: none; }
 
-.howtoContent {
+.howtoBody {
   padding: 0 16px 14px;
   display: flex;
   flex-direction: column;
@@ -124,7 +124,7 @@
   line-height: 1.6;
 }
 
-.howtoRegeln {
+.regeln {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -135,7 +135,6 @@
   font-size: 12px;
 }
 
-/* Modal */
 .overlay {
   position: fixed;
   inset: 0;
@@ -161,7 +160,7 @@
   box-shadow: var(--shadow);
 }
 
-.modalHeader {
+.modalTop {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -190,7 +189,7 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.tabAktiv { background: var(--surface2); color: var(--text); }
+.tabAn { background: var(--surface2); color: var(--text); }
 
 .orteGrid {
   display: grid;
@@ -214,7 +213,7 @@
   transition: all 0.12s;
 }
 .ortBtn:hover { border-color: var(--accent); color: var(--text); }
-.ortBtnAktiv { border-color: rgba(201,168,76,0.4); background: var(--accent-dim); color: var(--text); }
+.ortBtnAn { border-color: rgba(201,168,76,0.4); background: var(--accent-dim); color: var(--text); }
 
 .spielTab { display: flex; flex-direction: column; gap: 18px; }
 
@@ -251,7 +250,7 @@
   transition: all 0.12s;
 }
 .modusBtn:hover { border-color: var(--accent); color: var(--text); }
-.modusBtnAktiv { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+.modusBtnAn { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
 
 .infoBox {
   background: var(--bg2);

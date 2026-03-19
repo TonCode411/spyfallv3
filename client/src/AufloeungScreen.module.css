@@ -3,7 +3,6 @@
   display: flex;
   justify-content: center;
   padding: 24px 20px;
-  background: radial-gradient(ellipse at top, rgba(201,168,76,0.05) 0%, transparent 60%);
 }
 
 .container {
@@ -16,17 +15,23 @@
 
 .header {
   text-align: center;
+  padding: 8px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 8px 0;
 }
 
 .emoji { font-size: 50px; margin-bottom: 4px; }
-.title { font-family: var(--font-display); font-size: 32px; font-weight: 900; }
+
+.title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+}
 .gruen { color: var(--green); }
 .rot { color: var(--red); }
+
 .sub { font-size: 13px; color: var(--text2); }
 
 .ortBox {
@@ -69,14 +74,13 @@
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
 }
 .punkteIch { border-color: rgba(201,168,76,0.3); background: var(--accent-dim); }
-.platz { color: var(--text3); font-size: 12px; min-width: 18px; }
-.punkteName { flex: 1; font-weight: 500; }
+.platz { font-size: 12px; color: var(--text3); min-width: 18px; }
+.punkteName { flex: 1; font-weight: 500; font-size: 14px; }
 .punkteZahl { font-weight: 700; color: var(--accent); }
 
-.kartenListe {
+.kartenBox {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -93,10 +97,10 @@
   padding: 10px 14px;
   border-radius: var(--radius-sm);
 }
-.karteItemAgent { background: var(--red-dim); border: 1px solid rgba(224,85,85,0.2); }
-.karteItemSpieler { background: var(--bg2); border: 1px solid var(--border); }
+.karteRot { background: var(--red-dim); border: 1px solid rgba(224,85,85,0.2); }
+.karteNorm { background: var(--bg2); border: 1px solid var(--border); }
 
-.karteAvatar {
+.avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -109,7 +113,6 @@
   color: var(--accent);
   flex-shrink: 0;
 }
-
 .karteName { font-weight: 600; font-size: 14px; }
 .karteRolle { font-size: 12px; color: var(--text3); margin-top: 2px; }
 
@@ -119,7 +122,7 @@
   padding: 8px 0 16px;
 }
 
-.warteHost {
+.warteBox {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);

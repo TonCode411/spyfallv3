@@ -1,10 +1,10 @@
 import styles from './AufloeungScreen.module.css';
 
 const GRUENDE = {
-  enttarnt:     { emoji: '🎉', title: 'Agent enttarnt!',           farbe: 'gruen' },
-  agent_richtig:{ emoji: '🕵️', title: 'Agent hat den Ort erraten!', farbe: 'rot'  },
-  agent_falsch: { emoji: '❌', title: 'Agent lag falsch!',          farbe: 'gruen' },
-  zeit:         { emoji: '⏱',  title: 'Zeit abgelaufen!',           farbe: 'rot'  }
+  enttarnt:      { emoji: '🎉', title: 'Agent enttarnt!',            farbe: 'gruen' },
+  agent_richtig: { emoji: '🕵️', title: 'Agent hat den Ort erraten!',  farbe: 'rot'   },
+  agent_falsch:  { emoji: '❌', title: 'Agent lag falsch!',           farbe: 'gruen' },
+  zeit:          { emoji: '⏱',  title: 'Zeit abgelaufen!',            farbe: 'rot'   }
 };
 
 export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechsteRunde }) {
@@ -13,10 +13,10 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
   const info = GRUENDE[grund] || GRUENDE.enttarnt;
   const punkteAktiv = lobby?.settings?.punkteAktiv;
 
-  const spielerListe = Object.entries(karten).map(([id, k]) => ({
+  const liste = Object.entries(karten).map(([id, k]) => ({
     id, name: spieler[id]?.name || '?', ...k
   }));
-  const agent = spielerListe.find(s => s.typ === 'agent');
+  const agent = liste.find(s => s.typ === 'agent');
 
   return (
     <div className={styles.wrapper}>
@@ -27,21 +27,16 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
           <h1 className={`${styles.title} ${info.farbe === 'rot' ? styles.rot : styles.gruen}`}>
             {info.title}
           </h1>
-          {anklaegerName && (
-            <div className={styles.sub}>Anklage von <strong>{anklaegerName}</strong></div>
-          )}
+          {anklaegerName && <p className={styles.sub}>Anklage von <strong>{anklaegerName}</strong></p>}
           {agentGuess && (
-            <div className={styles.sub}>
-              Agent tippte: <strong>{agentGuess}</strong> {grund === 'agent_richtig' ? '✓' : '✗'}
-            </div>
-          )}
-          {agentPunkte > 0 && (
-            <div className={styles.sub}>Agent erhielt <strong>+{agentPunkte} {agentPunkte === 1 ? 'Punkt' : 'Punkte'}</strong></div>
+            <p className={styles.sub}>
+              Agent tippte: <strong>{agentGuess}</strong> {grund === 'agent_richtig' ? '✓ Richtig!' : '✗ Falsch'}
+            </p>
           )}
         </div>
 
         <div className={`${styles.ortBox} fade-in`} style={{ animationDelay: '0.05s' }}>
-          <div className={styles.ortLabel}>Der geheime Ort</div>
+          <div className={styles.ortLabel}>Der geheime Ort war</div>
           <div className={styles.ortName}>{ort.emoji} {ort.name}</div>
         </div>
 
@@ -50,7 +45,7 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
           <div className={styles.agentName}>🕵️ {agent?.name || '?'}</div>
         </div>
 
-        {punkteAktiv && punkteUpdate && punkteUpdate.length > 0 && (
+        {punkteAktiv && punkteUpdate?.length > 0 && (
           <div className={`${styles.punkteBox} fade-in`} style={{ animationDelay: '0.15s' }}>
             <div className="label">Punktestand</div>
             <div className={styles.punkteListe}>
@@ -65,15 +60,15 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
           </div>
         )}
 
-        <div className={`${styles.kartenListe} fade-in`} style={{ animationDelay: '0.2s' }}>
+        <div className={`${styles.kartenBox} fade-in`} style={{ animationDelay: '0.2s' }}>
           <div className="label">Alle Karten</div>
-          {spielerListe.map(s => (
-            <div key={s.id} className={`${styles.karteItem} ${s.typ === 'agent' ? styles.karteItemAgent : styles.karteItemSpieler}`}>
-              <div className={styles.karteAvatar}>{s.name.charAt(0).toUpperCase()}</div>
+          {liste.map(s => (
+            <div key={s.id} className={`${styles.karteItem} ${s.typ === 'agent' ? styles.karteRot : styles.karteNorm}`}>
+              <div className={styles.avatar}>{s.name.charAt(0).toUpperCase()}</div>
               <div style={{ flex: 1 }}>
                 <div className={styles.karteName}>
                   {s.name}
-                  {s.id === spielerId && <span className="text-dim" style={{ fontSize: 11, marginLeft: 6 }}>(Du)</span>}
+                  {s.id === spielerId && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>(Du)</span>}
                 </div>
                 {s.typ !== 'agent' && <div className={styles.karteRolle}>{s.rolle}</div>}
               </div>
@@ -88,13 +83,12 @@ export default function AufloeungScreen({ aufloesung, spielerId, lobby, onNaechs
         <div className={styles.actions}>
           {istHost ? (
             <button className="btn btn-primary" style={{ padding: '14px 40px', fontSize: 15 }} onClick={onNaechsteRunde}>
-              ▶ Naechste Runde
+              ▶ Nächste Runde
             </button>
           ) : (
-            <div className={styles.warteHost}>Warte auf den Host...</div>
+            <div className={styles.warteBox}>Warte auf den Host...</div>
           )}
         </div>
-
       </div>
     </div>
   );

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>🕵️ Agenten Undercover – Test Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; color: #e8e8f0; font-family: system-ui, sans-serif; font-size: 13px; }
+
+    .header {
+      background: #111118;
+      border-bottom: 1px solid #2a2a3a;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header h1 { font-size: 16px; font-weight: 700; color: #c9a84c; }
+    .header input {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      color: #e8e8f0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 220px;
+    }
+    .header input:focus { outline: none; border-color: #c9a84c; }
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-gold { background: #c9a84c; color: #0a0a0f; }
+    .btn-gold:hover { background: #e8c97a; }
+    .btn-ghost { background: transparent; color: #9090a8; border: 1px solid #2a2a3a; }
+    .btn-ghost:hover { border-color: #c9a84c; color: #c9a84c; }
+    .btn-red { background: rgba(224,85,85,0.15); color: #e05555; border: 1px solid rgba(224,85,85,0.3); }
+    .btn-red:hover { background: #e05555; color: white; }
+    .btn-green { background: rgba(76,175,125,0.15); color: #4caf7d; border: 1px solid rgba(76,175,125,0.3); }
+    .btn-green:hover { background: #4caf7d; color: white; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status-bar {
+      background: #16161f;
+      border-bottom: 1px solid #2a2a3a;
+      padding: 8px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .status-bar .pill {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+    }
+    .pill.green { background: rgba(76,175,125,0.15); color: #4caf7d; border-color: rgba(76,175,125,0.3); }
+    .pill.gold { background: rgba(201,168,76,0.15); color: #c9a84c; border-color: rgba(201,168,76,0.3); }
+    .pill.red { background: rgba(224,85,85,0.15); color: #e05555; border-color: rgba(224,85,85,0.3); }
+
+    .players-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1px;
+      background: #2a2a3a;
+      flex: 1;
+    }
+
+    .player-panel {
+      background: #0a0a0f;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .player-header {
+      background: #111118;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #2a2a3a;
+    }
+    .player-name { font-weight: 700; font-size: 13px; }
+    .player-role-tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .tag-agent { background: rgba(224,85,85,0.15); color: #e05555; border: 1px solid rgba(224,85,85,0.3); }
+    .tag-spieler { background: rgba(76,175,125,0.15); color: #4caf7d; border: 1px solid rgba(76,175,125,0.3); }
+    .tag-host { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,0.3); }
+
+    .player-card {
+      margin: 12px;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .card-agent { background: linear-gradient(135deg, #1a0808, #280e0e); border: 1px solid rgba(224,85,85,0.3); }
+    .card-spieler { background: linear-gradient(135deg, #071510, #0d2218); border: 1px solid rgba(76,175,125,0.3); }
+    .card-waiting { background: #16161f; border: 1px dashed #2a2a3a; color: #555568; }
+
+    .card-ort { font-size: 20px; font-weight: 700; color: #4caf7d; margin: 4px 0; }
+    .card-rolle { font-size: 14px; color: #e8e8f0; font-weight: 600; }
+    .card-label { font-size: 10px; color: #555568; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .card-agent-title { font-size: 24px; font-weight: 900; color: #e05555; }
+
+    .player-actions {
+      padding: 0 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .vote-section {
+      margin: 0 12px 12px;
+      background: #16161f;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .vote-title { font-size: 11px; font-weight: 700; color: #c9a84c; margin-bottom: 8px; }
+    .vote-buttons { display: flex; gap: 6px; }
+    select {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      color: #e8e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+    select:focus { outline: none; border-color: #c9a84c; }
+    input.inline {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      color: #e8e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+    input.inline:focus { outline: none; border-color: #c9a84c; }
+
+    .log {
+      background: #111118;
+      border-top: 1px solid #2a2a3a;
+      padding: 10px 20px;
+      height: 120px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 11px;
+      color: #9090a8;
+    }
+    .log-entry { padding: 1px 0; }
+    .log-entry.info { color: #c9a84c; }
+    .log-entry.event { color: #4caf7d; }
+    .log-entry.error { color: #e05555; }
+    .log-entry.vote { color: #9090ff; }
+
+    .voting-overlay {
+      margin: 12px;
+      background: rgba(224,85,85,0.08);
+      border: 1px solid rgba(224,85,85,0.3);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .voting-title { font-size: 12px; font-weight: 700; color: #e05555; margin-bottom: 8px; }
+    .voting-info { font-size: 11px; color: #9090a8; margin-bottom: 8px; }
+
+    .orte-list {
+      margin: 0 12px 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .ort-item {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: #16161f;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #9090a8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.1s;
+    }
+    .ort-item:hover { border-color: #c9a84c; color: #e8e8f0; }
+    .ort-item.struck { opacity: 0.3; text-decoration: line-through; }
+    .ort-item.meiner { border-color: rgba(76,175,125,0.4); background: rgba(76,175,125,0.08); color: #e8e8f0; }
+
+    .layout { display: flex; flex-direction: column; height: 100vh; }
+    .main { flex: 1; overflow: auto; }
+
+    .timer-display {
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 6px;
+      border: 1px solid #2a2a3a;
+      background: #1a1a24;
+    }
+    .timer-warn { color: #e0a030; border-color: rgba(224,160,48,0.4); }
+    .timer-krit { color: #e05555; border-color: rgba(224,85,85,0.4); animation: blink 0.8s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    .agent-rat-section {
+      margin: 0 12px 8px;
+    }
+    .vorschlag-list { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+    .vorschlag-item {
+      font-size: 12px;
+      padding: 6px 10px;
+      background: #16161f;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #9090a8;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vorschlag-item:hover { border-color: #c9a84c; color: #e8e8f0; background: rgba(201,168,76,0.08); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🕵️ Test Tool</h1>
+    <input type="text" id="serverUrl" value="http://localhost:3001" placeholder="Server URL">
+    <input type="text" id="numPlayers" value="4" placeholder="Anzahl Spieler" style="width:120px">
+    <button class="btn btn-gold" onclick="startTest()">▶ Test starten</button>
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Reset</button>
+    <span id="lobbyCode" style="font-family:monospace;font-weight:700;color:#c9a84c;font-size:16px;letter-spacing:0.2em"></span>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>Status:</span>
+    <span id="statusPill" class="pill">Nicht verbunden</span>
+    <span id="timerDisplay" class="timer-display" style="display:none"></span>
+    <span id="rundeDisplay" class="pill gold" style="display:none"></span>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-ghost" id="btnStartRunde" onclick="hostStartRunde()" disabled>🎮 Runde starten</button>
+      <button class="btn btn-red" id="btnAufloesung" onclick="hostAufloesung()" disabled style="display:none">🔍 Auflösen</button>
+    </div>
+  </div>
+
+  <!-- Players grid -->
+  <div class="main">
+    <div class="players-grid" id="playersGrid"></div>
+  </div>
+
+  <!-- Log -->
+  <div class="log" id="log"></div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+let players = []; // { name, socket, id, karte, alleOrte, ausgeschlossen, votedIn }
+let lobbyCode = null;
+let hostSocket = null;
+let timerInterval = null;
+let currentTimer = null;
+let currentVote = null;
+
+const NAMEN = ['Anna', 'Ben', 'Clara', 'David', 'Emma', 'Felix', 'Greta', 'Hans'];
+
+function log(msg, type = '') {
+  const el = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + type;
+  div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function resetAll() {
+  players.forEach(p => { try { p.socket.disconnect(); } catch(e){} });
+  players = [];
+  lobbyCode = null;
+  hostSocket = null;
+  currentVote = null;
+  currentTimer = null;
+  document.getElementById('playersGrid').innerHTML = '';
+  document.getElementById('lobbyCode').textContent = '';
+  document.getElementById('statusPill').textContent = 'Nicht verbunden';
+  document.getElementById('statusPill').className = 'pill';
+  document.getElementById('btnStartRunde').disabled = true;
+  document.getElementById('btnAufloesung').style.display = 'none';
+  document.getElementById('timerDisplay').style.display = 'none';
+  document.getElementById('rundeDisplay').style.display = 'none';
+  log('Reset.', 'info');
+}
+
+async function startTest() {
+  resetAll();
+  const serverUrl = document.getElementById('serverUrl').value.trim();
+  const n = Math.min(8, Math.max(3, parseInt(document.getElementById('numPlayers').value) || 4));
+
+  log(`Verbinde mit ${serverUrl} – ${n} Spieler...`, 'info');
+
+  // Create host first
+  const host = await createPlayer(NAMEN[0], serverUrl, true);
+  if (!host) { log('Host konnte nicht verbinden!', 'error'); return; }
+
+  // Create rest
+  for (let i = 1; i < n; i++) {
+    await sleep(300);
+    await createPlayer(NAMEN[i], serverUrl, false);
+  }
+
+  log(`Alle ${n} Spieler verbunden. Lobby: ${lobbyCode}`, 'event');
+  document.getElementById('statusPill').textContent = `${n} Spieler in Lobby ${lobbyCode}`;
+  document.getElementById('statusPill').className = 'pill green';
+  document.getElementById('btnStartRunde').disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function createPlayer(name, serverUrl, isHost) {
+  return new Promise((resolve) => {
+    const sock = io(serverUrl, { transports: ['websocket', 'polling'] });
+    const player = { name, socket: sock, id: null, karte: null, alleOrte: [], ausgeschlossen: [] };
+
+    sock.on('connect', () => {
+      log(`${name} verbunden`, 'event');
+      if (isHost) {
+        sock.emit('lobby:erstellen', { name }, (res) => {
+          if (!res.success) { log('Erstellen fehlgeschlagen: ' + res.error, 'error'); resolve(null); return; }
+          player.id = res.spielerId;
+          lobbyCode = res.code;
+          hostSocket = sock;
+          document.getElementById('lobbyCode').textContent = res.code;
+          players.push(player);
+          renderPlayer(player, true);
+          resolve(player);
+        });
+      } else {
+        sock.emit('lobby:beitreten', { code: lobbyCode, name }, (res) => {
+          if (!res.success) { log('Beitreten fehlgeschlagen: ' + res.error, 'error'); resolve(null); return; }
+          player.id = res.spielerId;
+          players.push(player);
+          renderPlayer(player, false);
+          resolve(player);
+        });
+      }
+    });
+
+    sock.on('runde:karte', ({ karte, alleOrte, runde, settings }) => {
+      player.karte = karte;
+      player.alleOrte = alleOrte;
+      player.ausgeschlossen = [];
+      log(`${name} → ${karte.typ === 'agent' ? '🕵️ AGENT' : karte.ort + ' / ' + karte.rolle}`, karte.typ === 'agent' ? 'error' : 'event');
+      renderPlayer(player, player.socket === hostSocket);
+      document.getElementById('rundeDisplay').textContent = `Runde ${runde}`;
+      document.getElementById('rundeDisplay').style.display = '';
+      document.getElementById('btnAufloesung').style.display = '';
+    });
+
+    sock.on('timer:tick', ({ restzeit, gesamt }) => {
+      currentTimer = { restzeit, gesamt };
+      updateTimer();
+    });
+
+    sock.on('vote:gestartet', (data) => {
+      currentVote = data;
+      log(`🗳 Vote: ${data.anklaegerName} beschuldigt ${data.beschuldigterName}`, 'vote');
+      players.forEach(p => renderPlayer(p, p.socket === hostSocket));
+    });
+
+    sock.on('vote:fortschritt', ({ abgegeben, gesamt }) => {
+      if (currentVote) { currentVote.abgegeben = abgegeben; currentVote.gesamt = gesamt; }
+      log(`Vote-Fortschritt: ${abgegeben}/${gesamt}`, 'vote');
+      players.forEach(p => renderPlayer(p, p.socket === hostSocket));
+    });
+
+    sock.on('vote:ergebnis', (data) => {
+      currentVote = null;
+      const msg = data.mehrheit
+        ? (data.beschuldigterIstAgent ? '✓ Agent enttarnt!' : '❌ Falsche Anklage!')
+        : `Keine Mehrheit (${data.jaStimmen}/${data.gesamtStimmen})`;
+      log(`Vote-Ergebnis: ${msg}`, 'vote');
+      players.forEach(p => { p.votedIn = false; renderPlayer(p, p.socket === hostSocket); });
+    });
+
+    sock.on('vote:abgebrochen', () => {
+      currentVote = null;
+      players.forEach(p => { p.votedIn = false; renderPlayer(p, p.socket === hostSocket); });
+      log('Vote abgebrochen', 'vote');
+    });
+
+    sock.on('runde:aufloesung', (data) => {
+      currentVote = null;
+      currentTimer = null;
+      document.getElementById('timerDisplay').style.display = 'none';
+      log(`🔓 Auflösung! Ort: ${data.ort.emoji} ${data.ort.name} | Grund: ${data.grund}`, 'info');
+      const agentEntry = Object.entries(data.karten).find(([,k]) => k.typ === 'agent');
+      if (agentEntry) {
+        const agentName = data.spieler[agentEntry[0]]?.name;
+        log(`   Agent war: ${agentName}`, 'info');
+      }
+      players.forEach(p => renderPlayer(p, p.socket === hostSocket));
+      document.getElementById('btnAufloesung').style.display = 'none';
+    });
+
+    sock.on('lobby:update', (lobbyData) => {
+      // Update punktestand
+      lobbyData.spieler?.forEach(s => {
+        const p = players.find(pl => pl.id === s.id);
+        if (p) p.punkte = s.punkte;
+      });
+    });
+
+    sock.on('ort:ausgeschlossen:update', ({ ausgeschlosseneOrte }) => {
+      player.ausgeschlossen = ausgeschlosseneOrte;
+      renderPlayer(player, player.socket === hostSocket);
+    });
+
+    sock.on('disconnect', () => log(`${name} getrennt`, 'error'));
+    sock.on('connect_error', (e) => { log(`${name} Verbindungsfehler: ${e.message}`, 'error'); resolve(null); });
+  });
+}
+
+function updateTimer() {
+  if (!currentTimer) return;
+  const el = document.getElementById('timerDisplay');
+  const { restzeit, gesamt } = currentTimer;
+  const m = Math.floor(restzeit / 60);
+  const s = String(restzeit % 60).padStart(2, '0');
+  el.textContent = `⏱ ${m}:${s}`;
+  el.style.display = '';
+  el.className = 'timer-display' + (restzeit <= 10 ? ' timer-krit' : restzeit <= 30 ? ' timer-warn' : '');
+}
+
+function hostStartRunde() {
+  if (!hostSocket) return;
+  players.forEach(p => { p.karte = null; p.ausgeschlossen = []; p.votedIn = false; });
+  currentVote = null;
+  hostSocket.emit('runde:starten', {}, (res) => {
+    if (res && !res.success) { log('Fehler: ' + res.error, 'error'); return; }
+    log('Runde gestartet!', 'info');
+  });
+}
+
+function hostAufloesung() {
+  // Trigger by making agent guess wrong (fastest way to end)
+  const agent = players.find(p => p.karte?.typ === 'agent');
+  if (agent) {
+    agent.socket.emit('agent:raten', { ortName: '___FORCE_END___' });
+    log('Runde zwangsbeendet (Agent falsch geraten)', 'info');
+  }
+}
+
+function playerVoteStart(playerId, beschuldigterId) {
+  const player = players.find(p => p.id === playerId);
+  const beschuldigter = players.find(p => p.id === beschuldigterId);
+  if (!player || !beschuldigter) return;
+  player.socket.emit('vote:starten', {
+    beschuldigter: beschuldigterId,
+    these: `Ich glaube, ${beschuldigter.name} ist der Agent!`
+  });
+  log(`${player.name} klagt ${beschuldigter.name} an`, 'vote');
+}
+
+function playerVote(playerId, ja) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+  player.votedIn = true;
+  player.socket.emit('vote:abgeben', { ja });
+  log(`${player.name} stimmt ${ja ? 'JA' : 'NEIN'}`, 'vote');
+  renderPlayer(player, player.socket === hostSocket);
+}
+
+function playerAgentRaten(playerId, ortName) {
+  const player = players.find(p => p.id === playerId);
+  if (!player || !ortName) return;
+  player.socket.emit('agent:raten', { ortName });
+  log(`Agent ${player.name} tippt: "${ortName}"`, 'info');
+}
+
+function toggleOrt(playerId, ortId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+  player.socket.emit('ort:markieren', { ortId });
+}
+
+function renderPlayer(player, isHost) {
+  const el = document.getElementById(`player-${player.id}`);
+  if (!el) return;
+
+  const karte = player.karte;
+  const istAgent = karte?.typ === 'agent';
+  const inVote = !!currentVote;
+  const hatAbgestimmt = player.votedIn;
+  const istAnklaeger = currentVote?.anklaeger === player.id;
+  const istBeschuldigter = currentVote?.beschuldigter === player.id;
+
+  let html = `
+    <div class="player-header">
+      <span class="player-name">${player.name}</span>
+      ${isHost ? '<span class="player-role-tag tag-host">Host</span>' : ''}
+      ${karte ? `<span class="player-role-tag ${istAgent ? 'tag-agent' : 'tag-spieler'}">${istAgent ? 'Agent' : 'Spieler'}</span>` : ''}
+      ${player.punkte ? `<span style="margin-left:auto;font-size:11px;color:#c9a84c">${player.punkte} Pkt</span>` : ''}
+    </div>
+  `;
+
+  // Karte
+  if (!karte) {
+    html += `<div class="player-card card-waiting" style="padding:20px">Wartet auf Runde...</div>`;
+  } else if (istAgent) {
+    html += `<div class="player-card card-agent"><div style="font-size:32px">🕵️</div><div class="card-agent-title">AGENT</div><div style="font-size:11px;color:#555568;margin-top:4px">Finde den Ort!</div></div>`;
+  } else {
+    html += `<div class="player-card card-spieler"><div style="font-size:11px;color:#555568">Ort</div><div class="card-ort">${karte.ortEmoji} ${karte.ort}</div><div style="font-size:10px;color:#555568;margin-top:8px;text-transform:uppercase;letter-spacing:0.1em">Rolle</div><div class="card-rolle">${karte.rolle}</div></div>`;
+  }
+
+  // Vote overlay
+  if (inVote) {
+    html += `<div class="voting-overlay">
+      <div class="voting-title">🗳 Abstimmung läuft</div>
+      <div class="voting-info">${currentVote.anklaegerName} beschuldigt <strong>${currentVote.beschuldigterName}</strong></div>
+      <div class="voting-info">${currentVote.abgegeben || 1}/${currentVote.gesamt} abgestimmt</div>`;
+
+    if (istAnklaeger) {
+      html += `<div style="font-size:11px;color:#c9a84c">Du hast die Anklage gestartet ✓</div>`;
+    } else if (istBeschuldigter) {
+      html += `<div style="font-size:11px;color:#e05555">Du wirst beschuldigt!</div>`;
+      if (!hatAbgestimmt) {
+        html += `<div class="vote-buttons" style="margin-top:6px">
+          <button class="btn btn-green" style="flex:1" onclick="playerVote('${player.id}', true)">✓ Ja</button>
+          <button class="btn btn-red" style="flex:1" onclick="playerVote('${player.id}', false)">✗ Nein</button>
+        </div>`;
+      } else {
+        html += `<div style="font-size:11px;color:#555568;margin-top:4px">Stimme abgegeben</div>`;
+      }
+    } else if (!hatAbgestimmt) {
+      html += `<div class="vote-buttons" style="margin-top:6px">
+        <button class="btn btn-green" style="flex:1" onclick="playerVote('${player.id}', true)">✓ Ja</button>
+        <button class="btn btn-red" style="flex:1" onclick="playerVote('${player.id}', false)">✗ Nein</button>
+      </div>`;
+    } else {
+      html += `<div style="font-size:11px;color:#555568;margin-top:4px">Stimme abgegeben</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Aktionen
+  if (karte && !inVote) {
+    html += `<div class="player-actions">`;
+
+    if (!istAgent) {
+      // Anklage
+      const anderen = players.filter(p => p.id !== player.id);
+      html += `<div style="display:flex;gap:6px;align-items:center">
+        <select id="accuse-${player.id}" style="flex:1">
+          <option value="">Beschuldigen...</option>
+          ${anderen.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <button class="btn btn-red" onclick="playerVoteStart('${player.id}', document.getElementById('accuse-${player.id}').value)" style="white-space:nowrap">Anklagen</button>
+      </div>`;
+    } else {
+      // Agent raten
+      html += `<div>
+        <input class="inline" id="guess-${player.id}" placeholder="Ort eingeben..." oninput="updateVorschlaege('${player.id}', this.value)">
+        <div class="vorschlag-list" id="vorschlaege-${player.id}"></div>
+        <button class="btn btn-gold" style="width:100%;margin-top:4px" onclick="playerAgentRaten('${player.id}', document.getElementById('guess-${player.id}').value)">🎯 Raten & beenden</button>
+      </div>`;
+    }
+
+    html += `</div>`;
+
+    // Ortsliste
+    if (player.alleOrte?.length) {
+      html += `<div style="padding:0 12px 4px;font-size:10px;color:#555568;text-transform:uppercase;letter-spacing:0.1em">Orte</div>`;
+      html += `<div class="orte-list">`;
+      player.alleOrte.forEach(o => {
+        const aus = player.ausgeschlossen.includes(o.id);
+        const meiner = !istAgent && karte?.ort === o.name;
+        html += `<div class="ort-item ${aus ? 'struck' : ''} ${meiner ? 'meiner' : ''}" onclick="toggleOrt('${player.id}', ${o.id})">
+          <span>${o.emoji}</span><span>${o.name}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  el.innerHTML = html;
+}
+
+function updateVorschlaege(playerId, input) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+  const el = document.getElementById(`vorschlaege-${playerId}`);
+  if (!el) return;
+  if (!input.trim()) { el.innerHTML = ''; return; }
+  const q = input.toLowerCase();
+  const matches = player.alleOrte.filter(o => o.name.toLowerCase().includes(q)).slice(0, 5);
+  el.innerHTML = matches.map(o =>
+    `<div class="vorschlag-item" onclick="playerAgentRaten('${playerId}', '${o.name}')">${o.emoji} ${o.name}</div>`
+  ).join('');
+}
+
+function renderPlayer(player, isHost) {
+  const grid = document.getElementById('playersGrid');
+  let el = document.getElementById(`player-${player.id}`);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = `player-${player.id}`;
+    el.className = 'player-panel';
+    grid.appendChild(el);
+  }
+  _renderPlayerContent(el, player, isHost);
+}
+
+// Rename inner function
+const _renderPlayerContent = (el, player, isHost) => {
+  const karte = player.karte;
+  const istAgent = karte?.typ === 'agent';
+  const inVote = !!currentVote;
+  const hatAbgestimmt = player.votedIn;
+  const istAnklaeger = currentVote?.anklaeger === player.id;
+  const istBeschuldigter = currentVote?.beschuldigter === player.id;
+
+  let html = `
+    <div class="player-header">
+      <span class="player-name">${player.name}</span>
+      ${isHost ? '<span class="player-role-tag tag-host">Host</span>' : ''}
+      ${karte ? `<span class="player-role-tag ${istAgent ? 'tag-agent' : 'tag-spieler'}">${istAgent ? '🕵️ Agent' : 'Spieler'}</span>` : ''}
+      ${player.punkte ? `<span style="margin-left:auto;font-size:11px;color:#c9a84c">${player.punkte} Pkt</span>` : ''}
+    </div>
+  `;
+
+  if (!karte) {
+    html += `<div class="player-card card-waiting" style="padding:20px;font-size:13px">Wartet auf Runde...</div>`;
+  } else if (istAgent) {
+    html += `<div class="player-card card-agent"><div style="font-size:32px">🕵️</div><div class="card-agent-title">AGENT</div><div style="font-size:11px;color:#555568;margin-top:4px">Finde den Ort heraus!</div></div>`;
+  } else {
+    html += `<div class="player-card card-spieler"><div style="font-size:11px;color:#555568">Ort</div><div class="card-ort">${karte.ortEmoji} ${karte.ort}</div><div style="font-size:10px;color:#555568;margin-top:8px;text-transform:uppercase;letter-spacing:0.1em">Rolle</div><div class="card-rolle">${karte.rolle}</div></div>`;
+  }
+
+  if (inVote) {
+    html += `<div class="voting-overlay">
+      <div class="voting-title">🗳 Abstimmung</div>
+      <div class="voting-info">${currentVote.anklaegerName} → <strong>${currentVote.beschuldigterName}</strong></div>
+      <div class="voting-info">${currentVote.abgegeben || 1}/${currentVote.gesamt || players.length} abgestimmt</div>`;
+    if (istAnklaeger) {
+      html += `<div style="font-size:11px;color:#c9a84c;margin-top:4px">✓ Anklage gestartet</div>`;
+    } else if (!hatAbgestimmt) {
+      html += `<div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-green" style="flex:1" onclick="playerVote('${player.id}', true)">✓ Ja</button>
+        <button class="btn btn-red" style="flex:1" onclick="playerVote('${player.id}', false)">✗ Nein</button>
+      </div>`;
+    } else {
+      html += `<div style="font-size:11px;color:#555568;margin-top:4px">Stimme abgegeben</div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (karte && !inVote) {
+    html += `<div class="player-actions">`;
+    if (!istAgent) {
+      const anderen = players.filter(p => p.id !== player.id);
+      html += `<div style="display:flex;gap:6px;align-items:center">
+        <select id="accuse-${player.id}" style="flex:1">
+          <option value="">Beschuldigen...</option>
+          ${anderen.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <button class="btn btn-red" style="padding:6px 10px;white-space:nowrap" onclick="playerVoteStart('${player.id}', document.getElementById('accuse-${player.id}').value)">🚨</button>
+      </div>`;
+    } else {
+      html += `<input class="inline" id="guess-${player.id}" placeholder="Ort eintippen..." oninput="updateVorschlaege('${player.id}', this.value)">
+        <div class="vorschlag-list" id="vorschlaege-${player.id}"></div>
+        <button class="btn btn-gold" style="width:100%;margin-top:4px" onclick="playerAgentRaten('${player.id}', document.getElementById('guess-${player.id}').value)">🎯 Raten & beenden</button>`;
+    }
+    html += `</div>`;
+
+    if (player.alleOrte?.length) {
+      html += `<div style="padding:0 12px 4px;font-size:10px;color:#555568;text-transform:uppercase;letter-spacing:0.1em">Orte</div><div class="orte-list">`;
+      player.alleOrte.forEach(o => {
+        const aus = player.ausgeschlossen.includes(o.id);
+        const meiner = !istAgent && karte?.ort === o.name;
+        html += `<div class="ort-item ${aus?'struck':''} ${meiner?'meiner':''}" onclick="toggleOrt('${player.id}', ${o.id})">${o.emoji} ${o.name}</div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  el.innerHTML = html;
+};
+</script>
+</body>
+</html>
