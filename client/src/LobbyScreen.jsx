@@ -58,7 +58,7 @@ export default function LobbyScreen({ lobby, spielerId, verbunden, onRundeStarte
     <div className={styles.wrapper}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>🕵️ Agenten Undercover <span style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace'}}>v13</span></h1>
+          <h1 className={styles.title}>🕵️ Agenten Undercover <span style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace'}}>v14</span></h1>
           {anzahl >= 3 && anzahl < 5 && (
             <div className={styles.tipp}>💡 Am besten mit 5+ Spielern</div>
           )}
