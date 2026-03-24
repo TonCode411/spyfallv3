@@ -424,4 +424,4 @@ app.get('/health', (_, res) => res.json({ ok: true, lobbies: Object.keys(lobbies
 app.get('/', (_, res) => res.json({ status: 'Agenten Undercover Server' }));
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server laeuft auf Port ' + PORT));
+server.listen(PORT, () => console.log('Server v12 laeuft auf Port ' + PORT));
